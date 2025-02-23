@@ -1,0 +1,21 @@
+services:
+  musicxmldb.server:
+    image: ${DOCKER_REGISTRY-}musicxmldbserver
+    build:
+      context: .
+      dockerfile: MusicXmlDb.Server/Dockerfile
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: Keycloak
+    command: start-dev
+    environment:
+      - KC_HEALTH_ENABLED=true
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    volumes:
+      - ./.containers/identity:/opt/keycloak/data
+    ports:
+      - 18080:8080
