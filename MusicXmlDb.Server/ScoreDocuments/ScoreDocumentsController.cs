@@ -20,20 +20,18 @@ namespace MusicXmlDb.Server.ScoreDocuments
         private readonly IMusicXmlValidator musicXmlValidator;
         private readonly ScoreDocumentContext scoreDocumentContext;
         private readonly MusicXmlDocumentContext musicXmlDocumentContext;
-        private readonly UserManager<ApplicationUser> userManager;
 
-        public ScoreDocumentsController(IMusicXmlValidator musicXmlValidator, ScoreDocumentContext scoreDocumentContext, MusicXmlDocumentContext musicXmlDocumentContext, UserManager<ApplicationUser> userManager)
+        public ScoreDocumentsController(IMusicXmlValidator musicXmlValidator, ScoreDocumentContext scoreDocumentContext, MusicXmlDocumentContext musicXmlDocumentContext)
         {
             this.musicXmlValidator = musicXmlValidator;
             this.scoreDocumentContext = scoreDocumentContext;
             this.musicXmlDocumentContext = musicXmlDocumentContext;
-            this.userManager = userManager;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ScoreDocumentModel>>> GetScoreDocuments()
         {
-            var user = await userManager.GetUserAsync(User);
+            var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
@@ -49,7 +47,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
         [HttpGet("{id}")]
         public async Task<ActionResult<ScoreDocumentModel>> GetScoreDocument(Guid id)
         {
-            var user = await userManager.GetUserAsync(User);
+            var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
@@ -72,7 +70,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
         [HttpPost]
         public async Task<ActionResult<ScoreDocumentModel>> PostScoreDocument([FromForm] string name, IFormFile formFile)
         {
-            var user = await userManager.GetUserAsync(User);
+            var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
@@ -93,7 +91,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
             {
                 return Problem(ex.Message);
             }
-           
+
             var xmlDocument = new MusicXmlDocument()
             {
                 Id = Guid.NewGuid(),
@@ -135,7 +133,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
         [HttpPost("{id}")]
         public async Task<ActionResult<ScoreDocumentHistoryModel>> PostScoreDocument(Guid id, IFormFile formFile)
         {
-            var user = await userManager.GetUserAsync(User);
+            var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
@@ -198,7 +196,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return BadRequest();
             }
 
-            var user = await userManager.GetUserAsync(User);
+            var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
@@ -217,7 +215,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
             scoreDocument.Name = scoreDocumentModel.Name;
             scoreDocument.IsPublic = scoreDocumentModel.IsPublic;
             scoreDocument.Modified = DateTime.UtcNow;
-            
+
             scoreDocumentContext.ScoreDocuments.Update(scoreDocument);
             await scoreDocumentContext.SaveChangesAsync();
 
@@ -227,7 +225,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteScoreDocument(Guid id)
         {
-            var user = await userManager.GetUserAsync(User);
+            var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
@@ -242,7 +240,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return NotFound();
             }
 
-            foreach(var version in scoreDocument.History)
+            foreach (var version in scoreDocument.History)
             {
                 var versionEntity = new MusicXmlDocument()
                 {
@@ -254,7 +252,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
 
             scoreDocumentContext.ScoreDocuments.Remove(scoreDocument);
 
-            await musicXmlDocumentContext.SaveChangesAsync();   
+            await musicXmlDocumentContext.SaveChangesAsync();
             await scoreDocumentContext.SaveChangesAsync();
 
             return NoContent();
