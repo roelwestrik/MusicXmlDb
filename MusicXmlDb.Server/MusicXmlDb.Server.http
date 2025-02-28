@@ -1,6 +1,0 @@
-@MusicXmlDb.Server_HostAddress = http://localhost:5068
-
-GET {{MusicXmlDb.Server_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
