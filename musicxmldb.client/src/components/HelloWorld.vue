@@ -23,10 +23,10 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
-import Keycloak, { type KeycloakConfig, type KeycloakLoginOptions } from 'keycloak-js';
+import Keycloak, { type KeycloakConfig } from 'keycloak-js';
 
 const config: KeycloakConfig = {
-  url: "https://localhost:8080",
+  url: "https://localhost:18080/",
   realm: "musicxml-auth",
   clientId: "public-client",
 }
