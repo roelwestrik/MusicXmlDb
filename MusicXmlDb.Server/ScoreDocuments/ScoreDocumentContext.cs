@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Reflection;
+using Microsoft.Extensions.Options;
 using MusicXmlDb.Server.MusicXmlDocuments;
+using System.Reflection;
 
 namespace MusicXmlDb.Server.ScoreDocuments;
 
@@ -8,19 +9,12 @@ public class ScoreDocumentContext : DbContext
 {
     public DbSet<ScoreDocument> ScoreDocuments { get; set; }
     public DbSet<ScoreDocumentHistory> ScoreDocumentHistories { get; set; }
+    public DbSet<MusicXmlDocument> MusicXmlDocuments { get; set; }
 
-    public string DbPath { get; }
-
-    public ScoreDocumentContext()
+    public ScoreDocumentContext(DbContextOptions<ScoreDocumentContext> dbContextOptions) : base(dbContextOptions)
     {
-        var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        DbPath = Path.Join(folder, "score-documents.db");
-    }
 
-    // The following configures EF to create a Sqlite database file in the
-    // special "local" folder for your platform.
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite($"Data Source={DbPath}");
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,8 +25,15 @@ public class ScoreDocumentContext : DbContext
         modelBuilder.Entity<ScoreDocumentHistory>()
             .HasOne(e => e.ScoreDocument)
             .WithMany(e => e.History)
-            .HasForeignKey(e => e.ScoreDocumentId);
-    }
+            .HasForeignKey(e => e.ScoreDocumentId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired(); ;
 
-public DbSet<MusicXmlDocument> MusicXmlDocument { get; set; } = default!;
+        modelBuilder.Entity<ScoreDocumentHistory>()
+            .HasOne(e => e.MusicXmlDocument)
+            .WithOne(e => e.ScoreDocumentHistory)
+            .HasForeignKey<MusicXmlDocument>(e => e.ScoreDocumentHistoryId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+    }
 }

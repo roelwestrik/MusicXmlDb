@@ -36,6 +36,6 @@ public class ScoreDocumentModel
             created: scoreDocument.Created,
             modified: scoreDocument.Modified,
             isPublic: scoreDocument.IsPublic
-        ); 
+        );
     }
 }

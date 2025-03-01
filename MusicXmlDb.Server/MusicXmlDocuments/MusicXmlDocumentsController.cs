@@ -15,13 +15,11 @@ public class MusicXmlDocumentsController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly ScoreDocumentContext scoreDocumentContext;
-    private readonly MusicXmlDocumentContext musicXmlDocumentContext;
 
-    public MusicXmlDocumentsController(UserManager<ApplicationUser> userManager, ScoreDocumentContext scoreDocumentContext, MusicXmlDocumentContext musicXmlDocumentContext)
+    public MusicXmlDocumentsController(UserManager<ApplicationUser> userManager, ScoreDocumentContext scoreDocumentContext)
     {
         this.userManager = userManager;
         this.scoreDocumentContext = scoreDocumentContext;
-        this.musicXmlDocumentContext = musicXmlDocumentContext;
     }
 
     [HttpGet("{scoreDocumentId}")]
@@ -50,8 +48,8 @@ public class MusicXmlDocumentsController : ControllerBase
             return NotFound();
         }
 
-        var xmlDocument = await musicXmlDocumentContext.MusicXmlDocuments
-            .FirstOrDefaultAsync(e => e.Id == scoreDocumentHistory.MusicXmlId);
+        var xmlDocument = await scoreDocumentContext.MusicXmlDocuments
+            .FirstOrDefaultAsync(e => e.ScoreDocumentHistoryId == scoreDocumentHistory.Id);
         if (xmlDocument == null)
         {
             return NotFound();
@@ -89,8 +87,8 @@ public class MusicXmlDocumentsController : ControllerBase
             return NotFound();
         }
 
-        var xmlDocument = await musicXmlDocumentContext.MusicXmlDocuments
-            .FirstOrDefaultAsync(e => e.Id == scoreDocumentHistory.MusicXmlId);
+        var xmlDocument = await scoreDocumentContext.MusicXmlDocuments
+            .FirstOrDefaultAsync(e => e.ScoreDocumentHistoryId == scoreDocumentHistory.Id);
         if (xmlDocument == null)
         {
             return NotFound();

@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MusicXmlDb.Server.ScoreDocuments;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MusicXmlDb.Server.Migrations.ScoreDocument
+namespace MusicXmlDb.Server.Migrations
 {
     [DbContext(typeof(ScoreDocumentContext))]
     partial class ScoreDocumentContextModelSnapshot : ModelSnapshot
@@ -17,48 +18,57 @@ namespace MusicXmlDb.Server.Migrations.ScoreDocument
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("ScoreDocuments")
-                .HasAnnotation("ProductVersion", "8.0.13");
+                .HasAnnotation("ProductVersion", "8.0.13")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("MusicXmlDb.Server.MusicXmlDocuments.MusicXmlDocument", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ScoreDocumentHistoryId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.ToTable("MusicXmlDocument", "ScoreDocuments");
+                    b.HasIndex("ScoreDocumentHistoryId")
+                        .IsUnique();
+
+                    b.ToTable("MusicXmlDocuments", "ScoreDocuments");
                 });
 
             modelBuilder.Entity("MusicXmlDb.Server.ScoreDocuments.ScoreDocument", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsPublic")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("Modified")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<int>("Views")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -69,26 +79,37 @@ namespace MusicXmlDb.Server.Migrations.ScoreDocument
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("MusicXmlId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ScoreDocumentId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ScoreDocumentId");
 
                     b.ToTable("ScoreDocumentHistories", "ScoreDocuments");
+                });
+
+            modelBuilder.Entity("MusicXmlDb.Server.MusicXmlDocuments.MusicXmlDocument", b =>
+                {
+                    b.HasOne("MusicXmlDb.Server.ScoreDocuments.ScoreDocumentHistory", "ScoreDocumentHistory")
+                        .WithOne("MusicXmlDocument")
+                        .HasForeignKey("MusicXmlDb.Server.MusicXmlDocuments.MusicXmlDocument", "ScoreDocumentHistoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ScoreDocumentHistory");
                 });
 
             modelBuilder.Entity("MusicXmlDb.Server.ScoreDocuments.ScoreDocumentHistory", b =>
@@ -105,6 +126,12 @@ namespace MusicXmlDb.Server.Migrations.ScoreDocument
             modelBuilder.Entity("MusicXmlDb.Server.ScoreDocuments.ScoreDocument", b =>
                 {
                     b.Navigation("History");
+                });
+
+            modelBuilder.Entity("MusicXmlDb.Server.ScoreDocuments.ScoreDocumentHistory", b =>
+                {
+                    b.Navigation("MusicXmlDocument")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

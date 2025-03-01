@@ -1,26 +1,25 @@
 ﻿
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MusicXmlDb.Server.MusicXmlDocuments;
 using MusicXmlDb.Server.ScoreDocuments;
-using MusicXmlDb.Server.Users;
-using NuGet.Configuration;
-using System.Security.Claims;
 
 namespace MusicXmlDb.Server;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public async static Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
-        builder.Services.AddDbContext<ScoreDocumentContext>();
-        builder.Services.AddDbContext<MusicXmlDocumentContext>();
+        var connectionString = builder.Configuration.GetConnectionString("Database");
+        builder.Services.AddDbContext<ScoreDocumentContext>(optionsBuilder =>
+        {
+            optionsBuilder.UseNpgsql(connectionString);
+        });
 
         builder.Services.AddSingleton<IMusicXmlValidator, MusicXmlValidator>();
 
@@ -101,6 +100,10 @@ public class Program
 
                 settings.EnableTryItOutByDefault();
             });
+
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ScoreDocumentContext>();
+            await db.Database.MigrateAsync();
         }
 
         app.UseHttpsRedirection();

@@ -2,7 +2,7 @@
 
 public class ScoreDocumentHistoryModel
 {
-    public Guid Id { get;  }
+    public Guid Id { get; }
 
     public Guid ScoreDocumentId { get; }
 

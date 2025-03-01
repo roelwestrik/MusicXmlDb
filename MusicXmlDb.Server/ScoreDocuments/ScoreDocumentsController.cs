@@ -19,13 +19,11 @@ namespace MusicXmlDb.Server.ScoreDocuments
     {
         private readonly IMusicXmlValidator musicXmlValidator;
         private readonly ScoreDocumentContext scoreDocumentContext;
-        private readonly MusicXmlDocumentContext musicXmlDocumentContext;
 
-        public ScoreDocumentsController(IMusicXmlValidator musicXmlValidator, ScoreDocumentContext scoreDocumentContext, MusicXmlDocumentContext musicXmlDocumentContext)
+        public ScoreDocumentsController(IMusicXmlValidator musicXmlValidator, ScoreDocumentContext scoreDocumentContext)
         {
             this.musicXmlValidator = musicXmlValidator;
             this.scoreDocumentContext = scoreDocumentContext;
-            this.musicXmlDocumentContext = musicXmlDocumentContext;
         }
 
         [HttpGet]
@@ -92,19 +90,21 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Problem(ex.Message);
             }
 
+
+            var scoreDocumentHistory = new ScoreDocumentHistory()
+            {
+                Id = Guid.NewGuid(),
+                ScoreDocumentId = scoreDocumentId,
+                Created = DateTime.UtcNow,
+                UserId = user.Id,
+            };
+
             var xmlDocument = new MusicXmlDocument()
             {
                 Id = Guid.NewGuid(),
                 Content = xmlContent,
-            };
-
-            var scoreDocumentHistory = new ScoreDocumentHistory()
-            {
-                ScoreDocumentId = scoreDocumentId,
-                Created = DateTime.UtcNow,
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                MusicXmlId = xmlDocument.Id
+                ScoreDocumentHistory = scoreDocumentHistory,
+                ScoreDocumentHistoryId = scoreDocumentHistory.Id
             };
 
             var scoreDocument = new ScoreDocument()
@@ -119,9 +119,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 Views = 0
             };
 
-            await musicXmlDocumentContext.AddAsync(xmlDocument);
-            await musicXmlDocumentContext.SaveChangesAsync();
-
+            await scoreDocumentContext.MusicXmlDocuments.AddAsync(xmlDocument);
             await scoreDocumentContext.ScoreDocuments.AddAsync(scoreDocument);
             await scoreDocumentContext.ScoreDocumentHistories.AddAsync(scoreDocumentHistory);
             await scoreDocumentContext.SaveChangesAsync();
@@ -163,24 +161,23 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Problem(ex.Message);
             }
 
+            var scoreDocumentHistory = new ScoreDocumentHistory()
+            {
+                Id = Guid.NewGuid(),
+                ScoreDocumentId = id,
+                Created = DateTime.UtcNow,
+                UserId = user.Id,
+            };
+
             var xmlDocument = new MusicXmlDocument()
             {
                 Id = Guid.NewGuid(),
                 Content = xmlContent,
+                ScoreDocumentHistory = scoreDocumentHistory,
+                ScoreDocumentHistoryId = scoreDocumentHistory.Id
             };
 
-            var scoreDocumentHistory = new ScoreDocumentHistory()
-            {
-                ScoreDocumentId = id,
-                Created = DateTime.UtcNow,
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                MusicXmlId = xmlDocument.Id
-            };
-
-            await musicXmlDocumentContext.AddAsync(xmlDocument);
-            await musicXmlDocumentContext.SaveChangesAsync();
-
+            await scoreDocumentContext.MusicXmlDocuments.AddAsync(xmlDocument);
             await scoreDocumentContext.ScoreDocumentHistories.AddAsync(scoreDocumentHistory);
             await scoreDocumentContext.SaveChangesAsync();
 
@@ -240,19 +237,8 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return NotFound();
             }
 
-            foreach (var version in scoreDocument.History)
-            {
-                var versionEntity = new MusicXmlDocument()
-                {
-                    Id = version.MusicXmlId,
-                };
-                musicXmlDocumentContext.MusicXmlDocuments.Attach(versionEntity);
-                musicXmlDocumentContext.MusicXmlDocuments.Remove(versionEntity);
-            }
 
             scoreDocumentContext.ScoreDocuments.Remove(scoreDocument);
-
-            await musicXmlDocumentContext.SaveChangesAsync();
             await scoreDocumentContext.SaveChangesAsync();
 
             return NoContent();
