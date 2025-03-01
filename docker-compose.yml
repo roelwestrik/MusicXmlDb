@@ -19,30 +19,29 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    volumes:
-      - ./.containers/pgadmin:/var/lib/pgadmin
 
   musicxmldb.keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: musicxmldb-keycloak
     command: start-dev --verbose
     environment:
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8080
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://musicxmldb-keycloak-db/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
       KC_HTTPS_PORT: 443
       KC_HOSTNAME_STRICT_BACKCHANNEL: false
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT_HTTPS: false
       KC_HEALTH_ENABLED: true
+
       KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/data/certs/localhostCert.pem
       KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/data/certs/localhostKey.pem 
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://musicxmldb-keycloak-db/${POSTGRES_DB}
-      KC_DB_USERNAME: ${POSTGRES_USER}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      PROXY: edge
+
+      KC_BOOTSTRAP_ADMIN: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
     volumes:
       - ./.containers/identity:/opt/keycloak/data
     ports:
