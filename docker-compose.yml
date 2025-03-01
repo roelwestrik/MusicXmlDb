@@ -20,7 +20,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     volumes:
-      - ./pgadmin-data:/var/lib/pgadmin
+      - ./.containers/pgadmin:/var/lib/pgadmin
 
   musicxmldb.keycloak:
     image: quay.io/keycloak/keycloak:latest
