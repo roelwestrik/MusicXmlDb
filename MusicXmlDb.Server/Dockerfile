@@ -9,18 +9,12 @@ EXPOSE 8081
 
 
 # This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS with-node
-RUN apt-get update
-RUN apt-get install curl
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
-RUN apt-get -y install nodejs
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 
-FROM with-node AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["MusicXmlDb.Server/MusicXmlDb.Server.csproj", "MusicXmlDb.Server/"]
-COPY ["musicxmldb.client/musicxmldb.client.esproj", "musicxmldb.client/"]
 RUN dotnet restore "./MusicXmlDb.Server/MusicXmlDb.Server.csproj"
 COPY . .
 WORKDIR "/src/MusicXmlDb.Server"

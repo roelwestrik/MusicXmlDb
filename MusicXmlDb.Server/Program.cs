@@ -98,6 +98,8 @@ public class Program
                 {
                     ["activated"] = false
                 };
+
+                settings.EnableTryItOutByDefault();
             });
         }
 
@@ -107,16 +109,9 @@ public class Program
         app.UseAuthentication();
         app.UseRouting();
 
-        app.MapGet("/api/Users/me", (ClaimsPrincipal claims) =>
-        {
-            return claims.Claims.Select(e => new Tuple<string, string>(e.Type, e.Value));
-        }).RequireAuthorization();
-
         app.UseAuthorization();
 
         app.MapControllers();
-
-        app.MapFallbackToFile("/index.html");
 
         app.Run();
     }
