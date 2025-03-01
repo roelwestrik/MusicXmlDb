@@ -3,27 +3,35 @@
     <h1>Weather forecast</h1>
     <p>This component demonstrates fetching data from the server.</p>
 
-    <div v-if="loggedIn"><p>Hello, {{ username }}!</p></div>
-    <button v-if="loggedIn" @click="logout">
-      LOGOUT
-    </button>
 
-    <button v-else @click="login">
-      LOGIN
-    </button>
+    <div v-if="loggedIn">
+      <p>Hello, {{ username }}!</p>
+      <button @click="logout">
+        LOGOUT
+      </button>
+    </div>
+
+    <div v-else>
+      <button @click="login">
+        LOGIN
+      </button>
+    </div>
+
 
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
-import Keycloak from 'keycloak-js';
+import Keycloak, { type KeycloakConfig, type KeycloakLoginOptions } from 'keycloak-js';
 
-const keycloak = new Keycloak({
-  url: "http://localhost:18080",
-  realm: "musicxmldb-keycloak",
-  clientId: "public-client"
-});
+const config: KeycloakConfig = {
+  url: "https://localhost:8080",
+  realm: "musicxml-auth",
+  clientId: "public-client",
+}
+
+const keycloak = new Keycloak(config);
 
 const loggedIn = ref(false)
 const username = ref("")
@@ -40,6 +48,7 @@ keycloak.init({ onLoad: 'check-sso' }).then(e => {
 const login = async () => {
   await keycloak.login()
 };
+
 const logout = async () => {
   await keycloak.logout();
 };

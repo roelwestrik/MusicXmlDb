@@ -1,21 +1,60 @@
 services:
-  musicxmldb.server:
-    image: ${DOCKER_REGISTRY-}musicxmldbserver
-    build:
-      context: .
-      dockerfile: MusicXmlDb.Server/Dockerfile
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: Keycloak
-    command: start-dev
+  musicxmldb.keycloak.db:
+    container_name: musicxmldb-keycloak-db
+    image: postgres
     environment:
-      - KC_HEALTH_ENABLED=true
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5332:5432"
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: musicxmldb-keycloak-db-pgadmin
+    restart: always
+    ports:
+      - "9090:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - ./pgadmin-data:/var/lib/pgadmin
+
+  musicxmldb.keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: musicxmldb-keycloak
+    command: start-dev --verbose
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HEALTH_ENABLED: true
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/data/certs/localhostCert.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/data/certs/localhostKey.pem 
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://musicxmldb-keycloak-db/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./.containers/identity:/opt/keycloak/data
     ports:
-      - 18080:8080
+      - 8080:8080
+    depends_on:
+      - musicxmldb.keycloak.db
+
+  musicxmldb.server:
+    image: ${DOCKER_REGISTRY-}musicxmldbserver
+    container_name: musicxmldb-server
+    build:
+      context: .
+      dockerfile: MusicXmlDb.Server/Dockerfile
+    depends_on:
+      - musicxmldb.keycloak
+    ports:
+      - 32772:8080
