@@ -26,7 +26,7 @@ import { ref } from 'vue';
 import Keycloak, { type KeycloakConfig } from 'keycloak-js';
 
 const config: KeycloakConfig = {
-  url: "https://localhost:18080/",
+  url: "http://localhost:18080/",
   realm: "musicxml-auth",
   clientId: "public-client",
 }

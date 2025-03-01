@@ -30,23 +30,21 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
 
-      KC_HTTPS_PORT: 443
+      KC_HOSTNAME: localhost
+      KC_HOST_PORT: 18080
+
       KC_HOSTNAME_STRICT_BACKCHANNEL: false
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT_HTTPS: false
       KC_HEALTH_ENABLED: true
 
-      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/data/certs/localhostCert.pem
-      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/data/certs/localhostKey.pem 
-
-      KC_BOOTSTRAP_ADMIN: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
     volumes:
       - ./.containers/identity:/opt/keycloak/data
     ports:
-      - 8080:8080
-      - 18080:443
+      - 18080:8080
     depends_on:
       - musicxmldb.keycloak.db
 
