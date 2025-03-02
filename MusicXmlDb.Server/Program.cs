@@ -103,7 +103,6 @@ public class Program
 
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ScoreDocumentContext>();
-            await db.Database.MigrateAsync();
         }
 
         app.UseHttpsRedirection();

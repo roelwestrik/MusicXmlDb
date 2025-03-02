@@ -11,7 +11,7 @@ public class ScoreDocumentContext : DbContext
     public DbSet<ScoreDocumentHistory> ScoreDocumentHistories { get; set; }
     public DbSet<MusicXmlDocument> MusicXmlDocuments { get; set; }
 
-    public ScoreDocumentContext(DbContextOptions<ScoreDocumentContext> dbContextOptions) : base(dbContextOptions)
+    public ScoreDocumentContext(DbContextOptions dbContextOptions) : base(dbContextOptions)
     {
 
     }
