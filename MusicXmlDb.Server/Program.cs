@@ -10,7 +10,7 @@ namespace MusicXmlDb.Server;
 
 public class Program
 {
-    public async static Task Main(string[] args)
+    public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -100,9 +100,6 @@ public class Program
 
                 settings.EnableTryItOutByDefault();
             });
-
-            using var scope = app.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ScoreDocumentContext>();
         }
 
         app.UseHttpsRedirection();
