@@ -4,13 +4,15 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 USER app
 WORKDIR /app
-EXPOSE 5000
-EXPOSE 5001
+EXPOSE 8080
+EXPOSE 8081
 
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
+RUN dotnet dev-certs https
+RUN dotnet dev-certs https --trust
 
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
