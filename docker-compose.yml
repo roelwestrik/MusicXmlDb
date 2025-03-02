@@ -1,21 +1,23 @@
 services:
   musicxmldb.db:
     container_name: musicxmldb-db
-    image: postgres
+    image: postgres:latest
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - 5432:5432
     restart: always
+    volumes:
+      - ./.containers/musicxmldb-db:/var/lib/postgresql/data
 
   musicxmldb.db.pgadmin:
     image: dpage/pgadmin4
     container_name: musicxmldb-db-pgadmin
     restart: always
     ports:
-      - "9090:80"
+      - 9090:80
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -60,4 +62,5 @@ services:
       - musicxmldb.keycloak
       - musicxmldb.db
     ports:
-      - 32772:8080
+      - 5000:5000
+      - 5001:5001
