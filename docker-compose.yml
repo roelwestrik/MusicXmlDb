@@ -34,9 +34,6 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
 
-      KC_HOSTNAME: localhost
-      KC_HOST_PORT: 18080
-
       KC_HOSTNAME_STRICT_BACKCHANNEL: false
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT_HTTPS: false
@@ -57,7 +54,7 @@ services:
     container_name: musicxmldb-server
     build:
       context: .
-      dockerfile: MusicXmlDb.Server/Dockerfile
+      dockerfile: ./MusicXmlDb.Server/MusicXmlDb.Server/Dockerfile
     depends_on:
       - musicxmldb.keycloak
       - musicxmldb.db
