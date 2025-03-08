@@ -61,3 +61,12 @@ services:
     ports:
       - "8080:8080"
       - "8081:8081"
+
+  musicxmldb.client:
+    build:
+      context: .
+      dockerfile: MusicXmlDb.Client/Dockerfile
+    container_name: musicxmldb-client
+    restart: always
+    ports:
+      - "5000:8080"
