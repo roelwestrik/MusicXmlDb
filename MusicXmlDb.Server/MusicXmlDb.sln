@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicXmlDb.Server", "MusicXmlDb.Server\MusicXmlDb.Server.csproj", "{E9E012BB-7079-4AB9-BD07-A57996081277}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{97034B3F-7629-413B-B939-177655A952C4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E9E012BB-7079-4AB9-BD07-A57996081277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9E012BB-7079-4AB9-BD07-A57996081277}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9E012BB-7079-4AB9-BD07-A57996081277}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9E012BB-7079-4AB9-BD07-A57996081277}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97034B3F-7629-413B-B939-177655A952C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97034B3F-7629-413B-B939-177655A952C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97034B3F-7629-413B-B939-177655A952C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97034B3F-7629-413B-B939-177655A952C4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC99E8EC-90FF-47CB-86E7-55D6E9479DD0}
+	EndGlobalSection
+EndGlobal

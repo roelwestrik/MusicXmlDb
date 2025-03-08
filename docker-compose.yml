@@ -1,0 +1,63 @@
+services:
+  musicxmldb.db:
+    container_name: musicxmldb-db
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - ./.containers/musicxmldb-db:/var/lib/postgresql/data
+
+  musicxmldb.db.pgadmin:
+    image: dpage/pgadmin4
+    container_name: musicxmldb-db-pgadmin
+    restart: always
+    ports:
+      - "9090:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - musicxmldb.db
+
+  musicxmldb.keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: musicxmldb-keycloak
+    command: start-dev --verbose
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://musicxmldb-db/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HEALTH_ENABLED: true
+
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+    volumes:
+      - ./.containers/identity:/opt/keycloak/data
+    ports:
+      - "18080:8080"
+    depends_on:
+      - musicxmldb.db
+
+  musicxmldb.server:
+    image: ${DOCKER_REGISTRY-}musicxmldbserver
+    container_name: musicxmldb-server
+    build:
+      context: .
+      dockerfile: ./MusicXmlDb.Server/MusicXmlDb.Server/Dockerfile
+    depends_on:
+      - musicxmldb.keycloak
+      - musicxmldb.db
+    ports:
+      - "8080:8080"
+      - "8081:8081"
