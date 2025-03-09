@@ -18,7 +18,10 @@ public class Program
         var connectionString = builder.Configuration.GetConnectionString("Database");
         builder.Services.AddDbContext<ScoreDocumentContext>(optionsBuilder =>
         {
-            optionsBuilder.UseNpgsql(connectionString);
+            optionsBuilder.UseNpgsql(connectionString, x =>
+            {
+                x.MigrationsHistoryTable("__EFMigrationsHistory", "ScoreDocuments");
+            });
         });
 
         builder.Services.AddSingleton<IMusicXmlValidator, MusicXmlValidator>();
