@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MusicXmlDb.Server.Migrations
 {
     [DbContext(typeof(ScoreDocumentContext))]
-    [Migration("20250308194906_DeleteUnnecessaryId")]
-    partial class DeleteUnnecessaryId
+    [Migration("20250309101352_InitalMigration")]
+    partial class InitalMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

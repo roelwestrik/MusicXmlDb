@@ -1,6 +1,6 @@
 services:
-  musicxmldb.db:
-    container_name: musicxmldb-db
+  musicxmldb.postgres:
+    container_name: postgres
     image: postgres:latest
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -12,9 +12,9 @@ services:
     volumes:
       - ./.containers/musicxmldb-db:/var/lib/postgresql/data
 
-  musicxmldb.db.pgadmin:
+  musicxmldb.pgadmin:
     image: dpage/pgadmin4
-    container_name: musicxmldb-db-pgadmin
+    container_name: pgadmin
     restart: always
     ports:
       - "9090:80"
@@ -22,17 +22,18 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     depends_on:
-      - musicxmldb.db
+      - musicxmldb.postgres
 
   musicxmldb.keycloak:
     image: quay.io/keycloak/keycloak:latest
-    container_name: musicxmldb-keycloak
+    container_name: keycloak
     command: start-dev --verbose
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://musicxmldb-db/${POSTGRES_DB}
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${KEYCLOAK_DB_SCHEMA}
 
       KC_HOSTNAME_STRICT_BACKCHANNEL: false
       KC_HTTP_ENABLED: true
@@ -47,17 +48,26 @@ services:
     ports:
       - "18080:8080"
     depends_on:
-      - musicxmldb.db
+      - musicxmldb.postgres
 
   musicxmldb.server:
     image: ${DOCKER_REGISTRY-}musicxmldbserver
-    container_name: musicxmldb-server
+    container_name: server
     build:
-      context: .
-      dockerfile: ./MusicXmlDb.Server/MusicXmlDb.Server/Dockerfile
+      context: ./MusicXmlDb.Server/
+      dockerfile: ./MusicXmlDb.Server/Dockerfile
     depends_on:
-      - musicxmldb.keycloak
-      - musicxmldb.db
+      - musicxmldb.postgres
     ports:
       - "8080:8080"
       - "8081:8081"
+
+  musicxmldb.client:
+    container_name: client
+    build:
+      context: ./MusicXmlDb.Client/
+      dockerfile: ./Dockerfile
+    ports:
+      - "5173:8080"
+    depends_on:
+      - musicxmldb.server

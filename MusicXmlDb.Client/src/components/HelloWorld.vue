@@ -27,7 +27,7 @@ import Keycloak, { type KeycloakConfig } from 'keycloak-js';
 
 const config: KeycloakConfig = {
   url: "http://localhost:18080/",
-  realm: "musicxml-auth",
+  realm: "musicxmldb-auth",
   clientId: "public-client",
 }
 
