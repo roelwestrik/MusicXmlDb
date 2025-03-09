@@ -35,7 +35,8 @@ const logout = async () => {
 <template>
     <div class="header">
 
-        <a class="logo">MusicXmlDb</a>
+        <router-link class="logo" to="/">MusicXmlDb</router-link>
+        <router-link to="/about">About</router-link>
 
         <div class="header-right">
             <div v-if="loggedIn">
@@ -67,14 +68,13 @@ const logout = async () => {
     text-align: center;
     padding: 12px;
     text-decoration: none;
-    font-size: 18px;
     line-height: 25px;
     border-radius: 4px;
 }
 
 /* Style the logo link (notice that we set the same value of line-height and font-size to prevent the header to increase when the font gets bigger */
 .header a.logo {
-    font-size: 25px;
+    font-size: 18px;
     font-weight: bold;
 }
 
