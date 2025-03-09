@@ -2,10 +2,10 @@ FROM node:lts-alpine AS build-stage
 RUN npm install -g http-server
 
 WORKDIR /app
-COPY ./MusicXmlDb.Client/package*.json ./
+COPY ./package*.json .
 RUN npm install
 
-COPY ./MusicXmlDb.Client* .
+COPY . .
 RUN npm run build
 
 EXPOSE 8080
