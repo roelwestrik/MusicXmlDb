@@ -33,7 +33,7 @@ const logout = async () => {
 </script>
 
 <template>
-    <div class="header">
+    <div class="topnav">
 
         <router-link class="logo" to="/">MusicXmlDb</router-link>
         <router-link to="/about">About</router-link>
@@ -56,48 +56,18 @@ const logout = async () => {
 </template>
 
 <style lang="css" scoped>
-/* Style the header with a grey background and some padding */
-.header {
-    overflow: hidden;
-    padding: 20px 10px;
+/* Add a black background color to the top navigation */
+.topnav {
+  overflow: hidden;
 }
 
-/* Style the header links */
-.header a, p {
-    float: left;
-    text-align: center;
-    padding: 12px;
-    text-decoration: none;
-    line-height: 25px;
-    border-radius: 4px;
+/* Style the links inside the navigation bar */
+.topnav a {
+  float: left;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
 }
 
-/* Style the logo link (notice that we set the same value of line-height and font-size to prevent the header to increase when the font gets bigger */
-.header a.logo {
-    font-size: 18px;
-    font-weight: bold;
-}
-
-/* Change the background color on mouse-over */
-.header a:hover {
-    cursor: pointer;
-}
-
-/* Float the link section to the right */
-.header-right {
-    float: right;
-}
-
-/* Add media queries for responsiveness - when the screen is 500px wide or less, stack the links on top of each other */
-@media screen and (max-width: 500px) {
-    .header a, p {
-        float: none;
-        display: block;
-        text-align: left;
-    }
-
-    .header-right {
-        float: none;
-    }
-}
 </style>

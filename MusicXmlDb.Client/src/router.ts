@@ -3,6 +3,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 const routes: Array<RouteRecordRaw> = [
   { path: '/', component: () => import('./components/Home.vue') },
   { path: '/about', component: () => import('./components/About.vue') },
+  { path: '/preview', component: () => import('./components/Preview.vue')},
   { path: '/:pathMatch(.*)*', component: () => import('./components/NotFound.vue')}
 ];
 

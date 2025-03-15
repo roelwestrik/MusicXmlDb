@@ -7,17 +7,10 @@ import Header from './components/Header.vue'
 
   <Header></Header>
 
-  <div class="body">
-
-    <router-view></router-view>
-
-  </div>
+  <router-view></router-view>
 
 </template>
 
 <style scoped>
-.body {
-  padding-left: 100px;
-  padding-right: 100px;
-}
+
 </style>
