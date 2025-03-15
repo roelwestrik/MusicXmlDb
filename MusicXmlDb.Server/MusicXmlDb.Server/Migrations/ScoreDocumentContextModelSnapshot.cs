@@ -17,7 +17,7 @@ namespace MusicXmlDb.Server.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("ScoreDocuments")
+                .HasDefaultSchema("score_documents")
                 .HasAnnotation("ProductVersion", "8.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -27,75 +27,94 @@ namespace MusicXmlDb.Server.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("content");
 
                     b.Property<Guid>("ScoreDocumentHistoryId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("score_document_history_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_music_xml_document");
 
                     b.HasIndex("ScoreDocumentHistoryId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_music_xml_document_score_document_history_id");
 
-                    b.ToTable("MusicXmlDocuments", "ScoreDocuments");
+                    b.ToTable("music_xml_document", "score_documents");
                 });
 
             modelBuilder.Entity("MusicXmlDb.Server.ScoreDocuments.ScoreDocument", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
 
                     b.Property<bool>("IsPublic")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_public");
 
                     b.Property<DateTime>("Modified")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("name");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
 
                     b.Property<int>("Views")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("views");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_score_document");
 
-                    b.ToTable("ScoreDocuments", "ScoreDocuments");
+                    b.ToTable("score_document", "score_documents");
                 });
 
             modelBuilder.Entity("MusicXmlDb.Server.ScoreDocuments.ScoreDocumentHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
 
                     b.Property<Guid>("ScoreDocumentId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("score_document_id");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_score_document_history");
 
-                    b.HasIndex("ScoreDocumentId");
+                    b.HasIndex("ScoreDocumentId")
+                        .HasDatabaseName("ix_score_document_history_score_document_id");
 
-                    b.ToTable("ScoreDocumentHistories", "ScoreDocuments");
+                    b.ToTable("score_document_history", "score_documents");
                 });
 
             modelBuilder.Entity("MusicXmlDb.Server.MusicXmlDocuments.MusicXmlDocument", b =>
@@ -104,7 +123,8 @@ namespace MusicXmlDb.Server.Migrations
                         .WithOne("MusicXmlDocument")
                         .HasForeignKey("MusicXmlDb.Server.MusicXmlDocuments.MusicXmlDocument", "ScoreDocumentHistoryId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_music_xml_document_score_document_history_score_document_hi");
 
                     b.Navigation("ScoreDocumentHistory");
                 });
@@ -115,7 +135,8 @@ namespace MusicXmlDb.Server.Migrations
                         .WithMany("History")
                         .HasForeignKey("ScoreDocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_score_document_history_score_document_score_document_id");
 
                     b.Navigation("ScoreDocument");
                 });

@@ -7,9 +7,9 @@ namespace MusicXmlDb.Server.ScoreDocuments;
 
 public class ScoreDocumentContext : DbContext
 {
-    public DbSet<ScoreDocument> ScoreDocuments { get; set; }
-    public DbSet<ScoreDocumentHistory> ScoreDocumentHistories { get; set; }
-    public DbSet<MusicXmlDocument> MusicXmlDocuments { get; set; }
+    public DbSet<ScoreDocument> ScoreDocument { get; set; }
+    public DbSet<ScoreDocumentHistory> ScoreDocumentHistory { get; set; }
+    public DbSet<MusicXmlDocument> MusicXmlDocument { get; set; }
 
     public ScoreDocumentContext(DbContextOptions dbContextOptions) : base(dbContextOptions)
     {
@@ -20,7 +20,7 @@ public class ScoreDocumentContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("ScoreDocuments");
+        modelBuilder.HasDefaultSchema("score_documents");
 
         modelBuilder.Entity<ScoreDocumentHistory>()
             .HasOne(e => e.ScoreDocument)

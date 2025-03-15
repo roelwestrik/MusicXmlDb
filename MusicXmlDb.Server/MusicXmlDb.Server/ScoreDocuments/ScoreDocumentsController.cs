@@ -35,7 +35,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
+            var scoreDocument = await scoreDocumentContext.ScoreDocument
                 .Where(e => e.UserId == user.Id)
                 .ToListAsync();
             var scoreDocumentModels = scoreDocument.Select(e => ScoreDocumentModel.Create(e, user)).ToList();
@@ -51,7 +51,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
+            var scoreDocument = await scoreDocumentContext.ScoreDocument
                 .Where(e => e.UserId == user.Id)
                 .Include(e => e.History)
                 .FirstOrDefaultAsync(e => e.Id == id);
@@ -119,9 +119,9 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 Views = 0
             };
 
-            await scoreDocumentContext.MusicXmlDocuments.AddAsync(xmlDocument);
-            await scoreDocumentContext.ScoreDocuments.AddAsync(scoreDocument);
-            await scoreDocumentContext.ScoreDocumentHistories.AddAsync(scoreDocumentHistory);
+            await scoreDocumentContext.MusicXmlDocument.AddAsync(xmlDocument);
+            await scoreDocumentContext.ScoreDocument.AddAsync(scoreDocument);
+            await scoreDocumentContext.ScoreDocumentHistory.AddAsync(scoreDocumentHistory);
             await scoreDocumentContext.SaveChangesAsync();
 
             var scoreDocumentModel = ScoreDocumentModel.Create(scoreDocument, user);
@@ -137,7 +137,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
+            var scoreDocument = await scoreDocumentContext.ScoreDocument
                 .Where(e => e.UserId == user.Id)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
@@ -176,8 +176,8 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 ScoreDocumentHistoryId = scoreDocumentHistory.Id
             };
 
-            await scoreDocumentContext.MusicXmlDocuments.AddAsync(xmlDocument);
-            await scoreDocumentContext.ScoreDocumentHistories.AddAsync(scoreDocumentHistory);
+            await scoreDocumentContext.MusicXmlDocument.AddAsync(xmlDocument);
+            await scoreDocumentContext.ScoreDocumentHistory.AddAsync(scoreDocumentHistory);
             await scoreDocumentContext.SaveChangesAsync();
 
             var scoreDocumentHistoryModel = ScoreDocumentHistoryModel.Create(scoreDocumentHistory);
@@ -198,7 +198,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
+            var scoreDocument = await scoreDocumentContext.ScoreDocument
                 .Where(e => e.UserId == user.Id)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
@@ -211,7 +211,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
             scoreDocument.IsPublic = scoreDocumentModel.IsPublic;
             scoreDocument.Modified = DateTime.Now.ToUniversalTime();
 
-            scoreDocumentContext.ScoreDocuments.Update(scoreDocument);
+            scoreDocumentContext.ScoreDocument.Update(scoreDocument);
             await scoreDocumentContext.SaveChangesAsync();
 
             return NoContent();
@@ -226,7 +226,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
+            var scoreDocument = await scoreDocumentContext.ScoreDocument
                 .Where(e => e.UserId == user.Id)
                 .FirstOrDefaultAsync(e => e.Id == id);
             if (scoreDocument == null)
@@ -235,7 +235,7 @@ namespace MusicXmlDb.Server.ScoreDocuments
             }
 
 
-            scoreDocumentContext.ScoreDocuments.Remove(scoreDocument);
+            scoreDocumentContext.ScoreDocument.Remove(scoreDocument);
             await scoreDocumentContext.SaveChangesAsync();
 
             return NoContent();

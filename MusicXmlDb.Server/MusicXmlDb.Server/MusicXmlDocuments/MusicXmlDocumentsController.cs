@@ -29,7 +29,7 @@ public class MusicXmlDocumentsController : ControllerBase
             return Unauthorized();
         }
 
-        var scoreDocument = scoreDocumentContext.ScoreDocuments
+        var scoreDocument = scoreDocumentContext.ScoreDocument
             .Where(e => e.UserId == user.Id)
             .Include(e => e.History)
             .FirstOrDefault(e => e.Id == scoreDocumentId);
@@ -46,7 +46,7 @@ public class MusicXmlDocumentsController : ControllerBase
             return Problem("This score document has become corrupted because it has no history.");
         }
 
-        var xmlDocument = await scoreDocumentContext.MusicXmlDocuments
+        var xmlDocument = await scoreDocumentContext.MusicXmlDocument
             .FirstOrDefaultAsync(e => e.ScoreDocumentHistoryId == scoreDocumentHistory.Id);
         if (xmlDocument == null)
         {
@@ -54,7 +54,7 @@ public class MusicXmlDocumentsController : ControllerBase
         }
 
         scoreDocument.Views++;
-        scoreDocumentContext.ScoreDocuments.Update(scoreDocument);
+        scoreDocumentContext.ScoreDocument.Update(scoreDocument);
         await scoreDocumentContext.SaveChangesAsync();
 
         return Content(xmlDocument.Content, "application/xml");
@@ -69,7 +69,7 @@ public class MusicXmlDocumentsController : ControllerBase
             return Unauthorized();
         }
 
-        var scoreDocument = scoreDocumentContext.ScoreDocuments
+        var scoreDocument = scoreDocumentContext.ScoreDocument
             .Where(e => e.UserId == user.Id)
             .Include(e => e.History)
             .FirstOrDefault(e => e.Id == scoreDocumentId);
@@ -85,7 +85,7 @@ public class MusicXmlDocumentsController : ControllerBase
             return NotFound();
         }
 
-        var xmlDocument = await scoreDocumentContext.MusicXmlDocuments
+        var xmlDocument = await scoreDocumentContext.MusicXmlDocument
             .FirstOrDefaultAsync(e => e.ScoreDocumentHistoryId == scoreDocumentHistory.Id);
         if (xmlDocument == null)
         {
@@ -93,7 +93,7 @@ public class MusicXmlDocumentsController : ControllerBase
         }
 
         scoreDocument.Views++;
-        scoreDocumentContext.ScoreDocuments.Update(scoreDocument);
+        scoreDocumentContext.ScoreDocument.Update(scoreDocument);
         await scoreDocumentContext.SaveChangesAsync();
 
         return Content(xmlDocument.Content, "application/xml");

@@ -20,8 +20,11 @@ public class Program
         {
             optionsBuilder.UseNpgsql(connectionString, x =>
             {
-                x.MigrationsHistoryTable("__EFMigrationsHistory", "ScoreDocuments");
+                x.MigrationsHistoryTable("__EFMigrationsHistory", "score_documents");
+
             });
+            
+            optionsBuilder.UseSnakeCaseNamingConvention();
         });
 
         builder.Services.AddSingleton<IMusicXmlValidator, MusicXmlValidator>();
