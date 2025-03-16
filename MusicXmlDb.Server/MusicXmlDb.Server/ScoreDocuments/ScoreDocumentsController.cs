@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MusicXmlDb.Server.MusicXmlDocuments;
 using MusicXmlDb.Server.Users;
 
@@ -18,16 +11,16 @@ namespace MusicXmlDb.Server.ScoreDocuments
     public class ScoreDocumentsController : ControllerBase
     {
         private readonly IMusicXmlValidator musicXmlValidator;
-        private readonly ScoreDocumentContext scoreDocumentContext;
+        private readonly ScoreDocumentRepository scoreDocumentRepository;
 
-        public ScoreDocumentsController(IMusicXmlValidator musicXmlValidator, ScoreDocumentContext scoreDocumentContext)
+        public ScoreDocumentsController(IMusicXmlValidator musicXmlValidator, ScoreDocumentRepository scoreDocumentRepository)
         {
             this.musicXmlValidator = musicXmlValidator;
-            this.scoreDocumentContext = scoreDocumentContext;
+            this.scoreDocumentRepository = scoreDocumentRepository;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ScoreDocumentModel>>> GetScoreDocuments()
+        public async Task<ActionResult<IEnumerable<ScoreDocument>>> GetScoreDocuments()
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
@@ -35,15 +28,12 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
-                .Where(e => e.UserId == user.Id)
-                .ToListAsync();
-            var scoreDocumentModels = scoreDocument.Select(e => ScoreDocumentModel.Create(e, user)).ToList();
+            var scoreDocumentModels = await scoreDocumentRepository.GetScoreDocumentsWithHistoriesAsync(user.Id);
             return scoreDocumentModels;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ScoreDocumentModel>> GetScoreDocument(Guid id)
+        public async Task<ActionResult<ScoreDocument>> GetScoreDocument(Guid id)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
@@ -51,30 +41,23 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
-                .Where(e => e.UserId == user.Id)
-                .Include(e => e.History)
-                .FirstOrDefaultAsync(e => e.Id == id);
-
-            if (scoreDocument == null)
+            var scoreDocumentModel = await scoreDocumentRepository.GetScoreDocumentWithHistoriesAsync(user.Id, id);
+            if (scoreDocumentModel is null)
             {
                 return NotFound();
             }
 
-            var scoreDocumentModel = ScoreDocumentModel.Create(scoreDocument, user);
             return scoreDocumentModel;
         }
 
         [HttpPost]
-        public async Task<ActionResult<ScoreDocumentModel>> PostScoreDocument([FromForm] string name, IFormFile formFile)
+        public async Task<ActionResult<PostScoreDocumentResponse>> PostScoreDocument([FromForm] string name, [FromForm] bool isPublic, IFormFile formFile)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
             {
                 return Unauthorized();
             }
-
-            var scoreDocumentId = Guid.NewGuid();
 
             string xmlContent;
             try
@@ -90,104 +73,68 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Problem(ex.Message);
             }
 
-
-            var scoreDocumentHistory = new ScoreDocumentHistory()
+            var body = new PostScoreDocumentBody()
             {
-                Id = Guid.NewGuid(),
+                DocumentName = name,
+                XmlString = xmlContent,
+                IsPublic = isPublic,
+            };
+
+            try
+            {
+                var response = await scoreDocumentRepository.InsertScoreDocumentAsync(user.Id, body);
+                return response;
+            }
+            catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+        [HttpPost("{scoreDocumentId}")]
+        public async Task<ActionResult<PostScoreDocumentHistoryReponse>> PostScoreDocument(Guid scoreDocumentId, IFormFile formFile)
+        {
+            var user = ApplicationUser.CreateLoggedInUser(User);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            string xmlContent;
+            try
+            {
+                xmlContent = musicXmlValidator.Validate(formFile);
+            }
+            catch (MusicXmlValidationException ex)
+            {
+                return Problem(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+
+            var body = new PostMusicXmlBody()
+            {
                 ScoreDocumentId = scoreDocumentId,
-                Created = DateTime.UtcNow,
-                UserId = user.Id,
+                XmlString = xmlContent,
             };
 
-            var xmlDocument = new MusicXmlDocument()
-            {
-                Id = Guid.NewGuid(),
-                Content = xmlContent,
-                ScoreDocumentHistory = scoreDocumentHistory,
-                ScoreDocumentHistoryId = scoreDocumentHistory.Id
-            };
-
-            var scoreDocument = new ScoreDocument()
-            {
-                Id = scoreDocumentId,
-                UserId = user.Id,
-                Name = name,
-                History = [scoreDocumentHistory],
-                IsPublic = false,
-                Created = DateTime.Now.ToUniversalTime(),
-                Modified = DateTime.Now.ToUniversalTime(),
-                Views = 0
-            };
-
-            await scoreDocumentContext.MusicXmlDocuments.AddAsync(xmlDocument);
-            await scoreDocumentContext.ScoreDocuments.AddAsync(scoreDocument);
-            await scoreDocumentContext.ScoreDocumentHistories.AddAsync(scoreDocumentHistory);
-            await scoreDocumentContext.SaveChangesAsync();
-
-            var scoreDocumentModel = ScoreDocumentModel.Create(scoreDocument, user);
-            return scoreDocumentModel;
-        }
-
-        [HttpPost("{id}")]
-        public async Task<ActionResult<ScoreDocumentHistoryModel>> PostScoreDocument(Guid id, IFormFile formFile)
-        {
-            var user = ApplicationUser.CreateLoggedInUser(User);
-            if (user == null)
-            {
-                return Unauthorized();
-            }
-
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
-                .Where(e => e.UserId == user.Id)
-                .FirstOrDefaultAsync(e => e.Id == id);
-
-            if (scoreDocument == null)
-            {
-                return NotFound();
-            }
-
-            string xmlContent;
             try
             {
-                xmlContent = musicXmlValidator.Validate(formFile);
-            }
-            catch (MusicXmlValidationException ex)
-            {
-                return Problem(ex.Message);
+                var response = await scoreDocumentRepository.AddScoreDocumentHistoryAsync(user.Id, body);
+                return response;
             }
             catch (Exception ex)
             {
                 return Problem(ex.Message);
             }
-
-            var scoreDocumentHistory = new ScoreDocumentHistory()
-            {
-                Id = Guid.NewGuid(),
-                ScoreDocumentId = scoreDocument.Id,
-                Created = DateTime.Now.ToUniversalTime(),
-                UserId = user.Id,
-            };
-
-            var xmlDocument = new MusicXmlDocument()
-            {
-                Id = Guid.NewGuid(),
-                Content = xmlContent,
-                ScoreDocumentHistory = scoreDocumentHistory,
-                ScoreDocumentHistoryId = scoreDocumentHistory.Id
-            };
-
-            await scoreDocumentContext.MusicXmlDocuments.AddAsync(xmlDocument);
-            await scoreDocumentContext.ScoreDocumentHistories.AddAsync(scoreDocumentHistory);
-            await scoreDocumentContext.SaveChangesAsync();
-
-            var scoreDocumentHistoryModel = ScoreDocumentHistoryModel.Create(scoreDocumentHistory);
-            return scoreDocumentHistoryModel;
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutScoreDocument(Guid id, PutScoreDocumentBody scoreDocumentModel)
+        [HttpPut("{scoreDocumentId}")]
+        public async Task<IActionResult> PutScoreDocument(Guid scoreDocumentId, PutScoreDocumentBody scoreDocumentModel)
         {
-            if (scoreDocumentModel.Id != id)
+            if (scoreDocumentModel.Id != scoreDocumentId)
             {
                 return BadRequest();
             }
@@ -198,27 +145,20 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
-                .Where(e => e.UserId == user.Id)
-                .FirstOrDefaultAsync(e => e.Id == id);
-
-            if (scoreDocument == null)
+            try
             {
-                return NotFound();
+                await scoreDocumentRepository.UpdateScoreDocumentAsync(user.Id, scoreDocumentModel);
             }
-
-            scoreDocument.Name = scoreDocumentModel.Name;
-            scoreDocument.IsPublic = scoreDocumentModel.IsPublic;
-            scoreDocument.Modified = DateTime.Now.ToUniversalTime();
-
-            scoreDocumentContext.ScoreDocuments.Update(scoreDocument);
-            await scoreDocumentContext.SaveChangesAsync();
+            catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
 
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteScoreDocument(Guid id)
+        [HttpDelete("{scoreDocumentId}/{scoreDocumentHistoryId}")]
+        public async Task<IActionResult> DeleteScoreDocumentHistory(Guid scoreDocumentId, Guid scoreDocumentHistoryId)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
@@ -226,18 +166,42 @@ namespace MusicXmlDb.Server.ScoreDocuments
                 return Unauthorized();
             }
 
-            var scoreDocument = await scoreDocumentContext.ScoreDocuments
-                .Where(e => e.UserId == user.Id)
-                .FirstOrDefaultAsync(e => e.Id == id);
-            if (scoreDocument == null)
+            try
             {
-                return NotFound();
+                if (!await scoreDocumentRepository.DeleteScoreDocumentHistoryAsync(user.Id, scoreDocumentId, scoreDocumentHistoryId))
+                {
+                    return BadRequest("Cannot delete a history if there less than 2 histories to a score document.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+            
+            return NoContent();
+        }
+
+        [HttpDelete("{scoreDocumentId}")]
+        public async Task<IActionResult> DeleteScoreDocument(Guid scoreDocumentId)
+        {
+            var user = ApplicationUser.CreateLoggedInUser(User);
+            if (user == null)
+            {
+                return Unauthorized();
             }
 
-
-            scoreDocumentContext.ScoreDocuments.Remove(scoreDocument);
-            await scoreDocumentContext.SaveChangesAsync();
-
+            try
+            {
+                if (!await scoreDocumentRepository.DeleteScoreDocumentAsync(user.Id, scoreDocumentId))
+                {
+                    return BadRequest("Cannot delete a history if there less than 2 histories to a score document.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+            
             return NoContent();
         }
     }
