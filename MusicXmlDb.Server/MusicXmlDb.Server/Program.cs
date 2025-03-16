@@ -1,6 +1,5 @@
 ﻿
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MusicXmlDb.Server.MusicXmlDocuments;
@@ -16,17 +15,7 @@ public class Program
 
         // Add services to the container.
         var connectionString = builder.Configuration.GetConnectionString("Database");
-        builder.Services.AddDbContext<ScoreDocumentContext>(optionsBuilder =>
-        {
-            optionsBuilder.UseNpgsql(connectionString, x =>
-            {
-                x.MigrationsHistoryTable("__EFMigrationsHistory", "score_documents");
-
-            });
-            
-            optionsBuilder.UseSnakeCaseNamingConvention();
-        });
-
+        builder.Services.AddTransient<ScoreDocumentRepository>();
         builder.Services.AddSingleton<IMusicXmlValidator, MusicXmlValidator>();
 
         builder.Services.AddControllers();
@@ -106,11 +95,6 @@ public class Program
 
                 settings.EnableTryItOutByDefault();
             });
-
-            using var scope = app.Services.CreateScope();
-            using var db = scope.ServiceProvider.GetRequiredService<ScoreDocumentContext>();
-
-            db.Database.Migrate();
         }
 
         app.UseHttpsRedirection();

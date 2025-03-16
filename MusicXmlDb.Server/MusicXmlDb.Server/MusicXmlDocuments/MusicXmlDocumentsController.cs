@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MusicXmlDb.Server.ScoreDocuments;
 using MusicXmlDb.Server.Users;
 
@@ -13,11 +10,11 @@ namespace MusicXmlDb.Server.MusicXmlDocuments;
 [Authorize]
 public class MusicXmlDocumentsController : ControllerBase
 {
-    private readonly ScoreDocumentContext scoreDocumentContext;
+    private readonly ScoreDocumentRepository scoreDocumentRepository;
 
-    public MusicXmlDocumentsController(ScoreDocumentContext scoreDocumentContext)
+    public MusicXmlDocumentsController(ScoreDocumentRepository scoreDocumentRepository)
     {
-        this.scoreDocumentContext = scoreDocumentContext;
+        this.scoreDocumentRepository = scoreDocumentRepository;
     }
 
     [HttpGet("{scoreDocumentId}")]
@@ -29,33 +26,11 @@ public class MusicXmlDocumentsController : ControllerBase
             return Unauthorized();
         }
 
-        var scoreDocument = scoreDocumentContext.ScoreDocument
-            .Where(e => e.UserId == user.Id)
-            .Include(e => e.History)
-            .FirstOrDefault(e => e.Id == scoreDocumentId);
-        if (scoreDocument == null)
-        {
-            return NotFound();
-        }
-
-        var scoreDocumentHistory = scoreDocument.History
-            .OrderByDescending(e => e.Created)
-            .FirstOrDefault();
-        if (scoreDocumentHistory == null)
-        {
-            return Problem("This score document has become corrupted because it has no history.");
-        }
-
-        var xmlDocument = await scoreDocumentContext.MusicXmlDocument
-            .FirstOrDefaultAsync(e => e.ScoreDocumentHistoryId == scoreDocumentHistory.Id);
+        var xmlDocument = await scoreDocumentRepository.GetLatestMusicXmlDocumentAsync(user.Id, scoreDocumentId);
         if (xmlDocument == null)
         {
             return NotFound();
         }
-
-        scoreDocument.Views++;
-        scoreDocumentContext.ScoreDocument.Update(scoreDocument);
-        await scoreDocumentContext.SaveChangesAsync();
 
         return Content(xmlDocument.Content, "application/xml");
     }
@@ -69,32 +44,11 @@ public class MusicXmlDocumentsController : ControllerBase
             return Unauthorized();
         }
 
-        var scoreDocument = scoreDocumentContext.ScoreDocument
-            .Where(e => e.UserId == user.Id)
-            .Include(e => e.History)
-            .FirstOrDefault(e => e.Id == scoreDocumentId);
-        if (scoreDocument == null)
-        {
-            return NotFound();
-        }
-
-        var scoreDocumentHistory = scoreDocument.History
-            .FirstOrDefault(e => e.Id == historyId);
-        if (scoreDocumentHistory == null)
-        {
-            return NotFound();
-        }
-
-        var xmlDocument = await scoreDocumentContext.MusicXmlDocument
-            .FirstOrDefaultAsync(e => e.ScoreDocumentHistoryId == scoreDocumentHistory.Id);
+        var xmlDocument = await scoreDocumentRepository.GetMusicXmlDocumentAsync(user.Id, scoreDocumentId, historyId);
         if (xmlDocument == null)
         {
             return NotFound();
         }
-
-        scoreDocument.Views++;
-        scoreDocumentContext.ScoreDocument.Update(scoreDocument);
-        await scoreDocumentContext.SaveChangesAsync();
 
         return Content(xmlDocument.Content, "application/xml");
     }

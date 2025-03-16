@@ -3,6 +3,39 @@ using Npgsql;
 
 namespace MusicXmlDb.Server.ScoreDocuments;
 
+public class PostScoreDocumentBody
+{
+    public string DocumentName { get; set; } = "";
+    public string XmlString { get; set; } = "";
+    public bool IsPublic { get; set; } = false;
+}
+
+public class PostMusicXmlBody
+{
+    public Guid ScoreDocumentId { get; set; }
+    public string XmlString { get; set; } = "";
+}
+
+public class PostScoreDocumentResponse
+{
+    public Guid Id { get; set; }
+    public string Documentname { get; set; } = "";
+    public string XmlString { get; set; } = "";
+    public bool IsPublic { get; set; } = false;
+    public PostScoreDocumentHistoryReponse History { get; set; }
+}
+
+public class PostScoreDocumentHistoryReponse
+{
+    public Guid Id { get; set; }
+    public PostScoreDocumentXmlDocumentReponse XmlDocument { get; set; }
+}
+
+public class PostScoreDocumentXmlDocumentReponse
+{
+    public Guid Id { get; set; }
+}
+
 public class ScoreDocumentRepository
 {
     private readonly IConfiguration _configuration;
@@ -13,24 +46,24 @@ public class ScoreDocumentRepository
     }
 
 
-    public async Task InsertScoreDocumentAsync()
+    public async Task<PostScoreDocumentResponse> InsertScoreDocumentAsync(string user_id, PostScoreDocumentBody body)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        var connectionString = _configuration.GetConnectionString("Database");
 
         // SQL Queries
         var insertScoreDocumentQuery = @"
-            INSERT INTO ScoreDocuments (Id, UserId, Name, Views, Created, Modified, IsPublic)
-            VALUES (@Id, @UserId, @Name, @Views, @Created, @Modified, @IsPublic);
+            INSERT INTO score_documents.score_document (id, user_id, name, views, created, modified, is_public)
+            VALUES (@id, @user_id, @name, @views, @created, @modified, @is_public);
         ";
 
         var insertScoreDocumentHistoryQuery = @"
-            INSERT INTO ScoreDocumentHistories (Id, ScoreDocumentId, UserId, Created)
-            VALUES (@Id, @ScoreDocumentId, @UserId, @Created);
+            INSERT INTO score_documents.score_document_history (id, score_document_id, user_id, created)
+            VALUES (@id, @score_document_id, @user_id, @created);
         ";
 
         var insertMusicXmlDocumentQuery = @"
-            INSERT INTO MusicXmlDocuments (Id, ScoreDocumentHistoryId, Content)
-            VALUES (@Id, @ScoreDocumentHistoryId, @Content);
+            INSERT INTO score_documents.music_xml_document (id, score_document_history_id, content)
+            VALUES (@id, @score_document_history_id, XMLPARSE(DOCUMENT @content));
         ";
 
         await using var connection = new NpgsqlConnection(connectionString);
@@ -43,13 +76,13 @@ public class ScoreDocumentRepository
             var scoreDocumentId = Guid.NewGuid();
             await using (var command = new NpgsqlCommand(insertScoreDocumentQuery, connection))
             {
-                command.Parameters.AddWithValue("Id", scoreDocumentId);
-                command.Parameters.AddWithValue("UserId", "user123");
-                command.Parameters.AddWithValue("Name", "Test Document");
-                command.Parameters.AddWithValue("Views", 0);
-                command.Parameters.AddWithValue("Created", DateTime.UtcNow);
-                command.Parameters.AddWithValue("Modified", DateTime.UtcNow);
-                command.Parameters.AddWithValue("IsPublic", true);
+                command.Parameters.AddWithValue("id", scoreDocumentId);
+                command.Parameters.AddWithValue("user_id", user_id);
+                command.Parameters.AddWithValue("name", body.DocumentName);
+                command.Parameters.AddWithValue("views", 0);
+                command.Parameters.AddWithValue("created", DateTime.UtcNow);
+                command.Parameters.AddWithValue("modified", DateTime.UtcNow);
+                command.Parameters.AddWithValue("is_public", body.IsPublic);
 
                 await command.ExecuteNonQueryAsync();
             }
@@ -58,10 +91,10 @@ public class ScoreDocumentRepository
             var scoreDocumentHistoryId = Guid.NewGuid();
             await using (var command = new NpgsqlCommand(insertScoreDocumentHistoryQuery, connection))
             {
-                command.Parameters.AddWithValue("Id", scoreDocumentHistoryId);
-                command.Parameters.AddWithValue("ScoreDocumentId", scoreDocumentId);
-                command.Parameters.AddWithValue("UserId", "user123");
-                command.Parameters.AddWithValue("Created", DateTime.UtcNow);
+                command.Parameters.AddWithValue("id", scoreDocumentHistoryId);
+                command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
+                command.Parameters.AddWithValue("user_id", user_id);
+                command.Parameters.AddWithValue("created", DateTime.UtcNow);
 
                 await command.ExecuteNonQueryAsync();
             }
@@ -70,15 +103,28 @@ public class ScoreDocumentRepository
             var musicXmlDocumentId = Guid.NewGuid();
             await using (var command = new NpgsqlCommand(insertMusicXmlDocumentQuery, connection))
             {
-                command.Parameters.AddWithValue("Id", musicXmlDocumentId);
-                command.Parameters.AddWithValue("ScoreDocumentHistoryId", scoreDocumentHistoryId);
-                command.Parameters.AddWithValue("Content", "<music><note>C</note><note>D</note><note>E</note></music>");
+                command.Parameters.AddWithValue("id", musicXmlDocumentId);
+                command.Parameters.AddWithValue("score_document_history_id", scoreDocumentHistoryId);
+                command.Parameters.AddWithValue("content", body.XmlString);
 
                 await command.ExecuteNonQueryAsync();
             }
 
             // Commit transaction
             await transaction.CommitAsync();
+
+            return new PostScoreDocumentResponse()
+            {
+                Id = scoreDocumentId,
+                History = new PostScoreDocumentHistoryReponse()
+                {
+                    Id = scoreDocumentHistoryId,
+                    XmlDocument = new PostScoreDocumentXmlDocumentReponse()
+                    {
+                        Id = musicXmlDocumentId,
+                    }
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -87,19 +133,19 @@ public class ScoreDocumentRepository
             throw; // Re-throw exception for proper handling/logging
         }
     }
-
-    public async Task AddScoreDocumentHistoryAsync(Guid scoreDocumentId, ScoreDocumentHistory history)
+    
+    public async Task<PostScoreDocumentHistoryReponse> AddScoreDocumentHistoryAsync(string userId, PostMusicXmlBody musicXml)
     {
-        var connectionString = "Host=your_host;Port=5432;Database=your_database;Username=your_user;Password=your_password";
+        var connectionString = _configuration.GetConnectionString("Database");
 
         var insertScoreDocumentHistoryQuery = @"
-            INSERT INTO ScoreDocumentHistories (Id, ScoreDocumentId, UserId, Created)
-            VALUES (@Id, @ScoreDocumentId, @UserId, @Created);
+            INSERT INTO score_documents.score_document_history (id, score_document_id, user_id, created)
+            VALUES (@id, @score_document_id, @user_id, @created);
         ";
 
         var insertMusicXmlDocumentQuery = @"
-            INSERT INTO MusicXmlDocuments (Id, ScoreDocumentHistoryId, Content)
-            VALUES (@Id, @ScoreDocumentHistoryId, @Content);
+            INSERT INTO score_documents.music_xml_document (id, score_document_history_id, content)
+            VALUES (@id, @score_document_history_id, XMLPARSE(DOCUMENT @content));
         ";
 
         await using var connection = new NpgsqlConnection(connectionString);
@@ -109,31 +155,39 @@ public class ScoreDocumentRepository
         try
         {
             // Insert the new ScoreDocumentHistory
+            var historyId = Guid.NewGuid();
             await using (var command = new NpgsqlCommand(insertScoreDocumentHistoryQuery, connection))
             {
-                command.Parameters.AddWithValue("Id", history.Id);
-                command.Parameters.AddWithValue("ScoreDocumentId", scoreDocumentId); // Link to existing ScoreDocument
-                command.Parameters.AddWithValue("UserId", history.UserId);
-                command.Parameters.AddWithValue("Created", history.Created);
+                command.Parameters.AddWithValue("id", historyId);
+                command.Parameters.AddWithValue("score_document_id", musicXml.ScoreDocumentId); // Link to existing ScoreDocument
+                command.Parameters.AddWithValue("user_id", userId);
+                command.Parameters.AddWithValue("created", DateTime.UtcNow);
 
                 await command.ExecuteNonQueryAsync();
             }
 
             // Insert the new MusicXmlDocument, if provided
-            if (history.MusicXmlDocument != null)
+            var musicXmlId = Guid.NewGuid();
+            await using (var command = new NpgsqlCommand(insertMusicXmlDocumentQuery, connection))
             {
-                await using (var command = new NpgsqlCommand(insertMusicXmlDocumentQuery, connection))
-                {
-                    command.Parameters.AddWithValue("Id", history.MusicXmlDocument.Id);
-                    command.Parameters.AddWithValue("ScoreDocumentHistoryId", history.Id); // Link to new history
-                    command.Parameters.AddWithValue("Content", history.MusicXmlDocument.Content);
+                command.Parameters.AddWithValue("id", musicXmlId);
+                command.Parameters.AddWithValue("score_document_history_id", historyId); // Link to new history
+                command.Parameters.AddWithValue("content", musicXml.XmlString);
 
-                    await command.ExecuteNonQueryAsync();
-                }
+                await command.ExecuteNonQueryAsync();
             }
 
             // Commit the transaction
             await transaction.CommitAsync();
+
+            return new PostScoreDocumentHistoryReponse()
+            {
+                Id = historyId,
+                XmlDocument = new PostScoreDocumentXmlDocumentReponse()
+                {
+                    Id = musicXmlId
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -143,111 +197,180 @@ public class ScoreDocumentRepository
         }
     }
 
-    public async Task<List<ScoreDocument>> GetScoreDocumentsWithHistoriesAsync()
+
+
+    public async Task<List<ScoreDocument>> GetScoreDocumentsWithHistoriesAsync(string userId)
     {
         var scoreDocuments = new List<ScoreDocument>();
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        var connectionString = _configuration.GetConnectionString("Database");
 
         var query = @"
-            SELECT d.*, h.*
-            FROM ScoreDocuments d
-            LEFT JOIN ScoreDocumentHistories h ON d.Id = h.ScoreDocumentId;
+            SELECT d.id AS document_id, h.id AS history_id, d.*, h.*
+            FROM score_documents.score_document d
+            LEFT JOIN score_documents.score_document_history h ON d.Id = h.score_document_id
+            WHERE d.user_id = @user_id;
         ";
 
         await using (var connection = new NpgsqlConnection(connectionString))
         {
             await connection.OpenAsync();
 
-            await using var command = new NpgsqlCommand(query, connection);
-            await using var reader = await command.ExecuteReaderAsync();
-            var documents = new Dictionary<Guid, ScoreDocument>();
-
-            while (await reader.ReadAsync())
+            await using (var command = new NpgsqlCommand(query, connection))
             {
-                var scoreDocumentId = reader.GetGuid(reader.GetOrdinal("Id"));
+                command.Parameters.AddWithValue("user_id", userId);
 
-                // If the ScoreDocument is not already in the dictionary, add it
-                if (!documents.TryGetValue(scoreDocumentId, out var scoreDocument))
+                await using var reader = await command.ExecuteReaderAsync();
+                var documents = new Dictionary<Guid, ScoreDocument>();
+
+                while (await reader.ReadAsync())
                 {
-                    scoreDocument = new ScoreDocument
-                    {
-                        Id = scoreDocumentId,
-                        UserId = reader.GetString(reader.GetOrdinal("UserId")),
-                        Name = reader.GetString(reader.GetOrdinal("Name")),
-                        Views = reader.GetInt32(reader.GetOrdinal("Views")),
-                        Created = reader.GetDateTime(reader.GetOrdinal("Created")),
-                        Modified = reader.GetDateTime(reader.GetOrdinal("Modified")),
-                        IsPublic = reader.GetBoolean(reader.GetOrdinal("IsPublic")),
-                        History = new List<ScoreDocumentHistory>()
-                    };
+                    // Use the correct ID from the `score_document` table
+                    var scoreDocumentId = reader.GetGuid(reader.GetOrdinal("document_id"));
 
-                    documents[scoreDocumentId] = scoreDocument;
+                    // If the ScoreDocument is not already in the dictionary, add it
+                    if (!documents.TryGetValue(scoreDocumentId, out var scoreDocument))
+                    {
+                        scoreDocument = new ScoreDocument
+                        {
+                            Id = scoreDocumentId,
+                            UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                            Name = reader.GetString(reader.GetOrdinal("name")),
+                            Views = reader.GetInt32(reader.GetOrdinal("views")),
+                            Created = reader.GetDateTime(reader.GetOrdinal("created")),
+                            Modified = reader.GetDateTime(reader.GetOrdinal("modified")),
+                            IsPublic = reader.GetBoolean(reader.GetOrdinal("is_public")),
+                            History = new List<ScoreDocumentHistory>()
+                        };
+
+                        documents[scoreDocumentId] = scoreDocument;
+                    }
+
+                    // Map ScoreDocumentHistory if available
+                    if (!reader.IsDBNull(reader.GetOrdinal("history_id")))
+                    {
+                        var history = new ScoreDocumentHistory
+                        {
+                            Id = reader.GetGuid(reader.GetOrdinal("history_id")),
+                            ScoreDocumentId = reader.GetGuid(reader.GetOrdinal("document_id")),
+                            UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                            Created = reader.GetDateTime(reader.GetOrdinal("created"))
+                        };
+
+                        scoreDocument.History.Add(history);
+                    }
                 }
 
-                // Map ScoreDocumentHistory if available
-                if (!reader.IsDBNull(reader.GetOrdinal("ScoreDocumentId")))
-                {
-                    var history = new ScoreDocumentHistory
-                    {
-                        Id = reader.GetGuid(reader.GetOrdinal("Id")),
-                        ScoreDocumentId = reader.GetGuid(reader.GetOrdinal("ScoreDocumentId")),
-                        UserId = reader.GetString(reader.GetOrdinal("UserId")),
-                        Created = reader.GetDateTime(reader.GetOrdinal("Created"))
-                    };
-
-                    scoreDocument.History.Add(history);
-                }
+                scoreDocuments = documents.Values.ToList();
             }
-
-            scoreDocuments = [.. documents.Values];
         }
 
         return scoreDocuments;
     }
 
-    public async Task<MusicXmlDocument?> GetMusicXmlDocumentAsync(Guid scoreDocumentId, Guid scoreDocumentHistoryId)
+    public async Task<ScoreDocument?> GetScoreDocumentWithHistoriesAsync(string userId, Guid id)
     {
-        var connectionString = "Host=your_host;Port=5432;Database=your_database;Username=your_user;Password=your_password";
+        var connectionString = _configuration.GetConnectionString("Database");
 
         var query = @"
-            SELECT m.Id, m.ScoreDocumentHistoryId, m.Content
-            FROM MusicXmlDocuments m
-            JOIN ScoreDocumentHistories h ON m.ScoreDocumentHistoryId = h.Id
-            WHERE h.ScoreDocumentId = @ScoreDocumentId
-              AND h.Id = @ScoreDocumentHistoryId;
+            SELECT d.*, h.*
+            FROM score_documents.score_document d
+            LEFT JOIN score_documents.score_document_history h ON d.Id = h.score_document_id
+            WHERE d.user_id = @user_id AND d.id = @score_document_id;
         ";
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
         await using var command = new NpgsqlCommand(query, connection);
-        command.Parameters.AddWithValue("ScoreDocumentId", scoreDocumentId);
-        command.Parameters.AddWithValue("ScoreDocumentHistoryId", scoreDocumentHistoryId);
+        command.Parameters.AddWithValue("user_id", userId);
+        command.Parameters.AddWithValue("score_document_id", id);
+
+        await using var reader = await command.ExecuteReaderAsync();
+
+        ScoreDocument? scoreDocument = null;
+
+        while (await reader.ReadAsync())
+        {
+            var scoreDocumentId = reader.GetGuid(reader.GetOrdinal("id"));
+
+            // If the ScoreDocument is not already initialized, create it
+            scoreDocument ??= new ScoreDocument
+            {
+                Id = scoreDocumentId,
+                UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                Name = reader.GetString(reader.GetOrdinal("name")),
+                Views = reader.GetInt32(reader.GetOrdinal("views")),
+                Created = reader.GetDateTime(reader.GetOrdinal("created")),
+                Modified = reader.GetDateTime(reader.GetOrdinal("modified")),
+                IsPublic = reader.GetBoolean(reader.GetOrdinal("is_public")),
+                History = new List<ScoreDocumentHistory>()
+            };
+
+            // Map ScoreDocumentHistory if available
+            if (!reader.IsDBNull(reader.GetOrdinal("score_document_id")))
+            {
+                var history = new ScoreDocumentHistory
+                {
+                    Id = reader.GetGuid(reader.GetOrdinal("id")),
+                    ScoreDocumentId = reader.GetGuid(reader.GetOrdinal("score_document_id")),
+                    UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                    Created = reader.GetDateTime(reader.GetOrdinal("created"))
+                };
+
+                scoreDocument.History.Add(history);
+            }
+        }
+
+        return scoreDocument;
+    }
+
+
+
+    public async Task<MusicXmlDocument?> GetMusicXmlDocumentAsync(string userId, Guid scoreDocumentId, Guid scoreDocumentHistoryId)
+    {
+        var connectionString = _configuration.GetConnectionString("Database");
+
+        var query = @"
+            SELECT m.Id, m.score_document_history_id, m.content
+            FROM score_documents.music_xml_document m
+            JOIN score_documents.score_document_history h ON m.score_document_history_id = h.Id
+            WHERE h.score_document_id = @score_document_id
+            AND h.id = @score_document_history_id
+            AND h.user_id = @user_id;
+        ";
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new NpgsqlCommand(query, connection);
+        command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
+        command.Parameters.AddWithValue("score_document_history_id", scoreDocumentHistoryId);
+        command.Parameters.AddWithValue("user_id", userId);
 
         await using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
             return new MusicXmlDocument
             {
-                Id = reader.GetGuid(reader.GetOrdinal("Id")),
-                ScoreDocumentHistoryId = reader.GetGuid(reader.GetOrdinal("ScoreDocumentHistoryId")),
-                Content = reader.GetString(reader.GetOrdinal("Content"))
+                Id = reader.GetGuid(reader.GetOrdinal("id")),
+                Content = reader.GetString(reader.GetOrdinal("content"))
             };
         }
 
         return null; // Return null if no document is found
     }
 
-    public async Task<MusicXmlDocument?> GetLatestMusicXmlDocumentAsync(Guid scoreDocumentId)
+    public async Task<MusicXmlDocument?> GetLatestMusicXmlDocumentAsync(string userId, Guid scoreDocumentId)
     {
-        var connectionString = "Host=your_host;Port=5432;Database=your_database;Username=your_user;Password=your_password";
+        var connectionString = _configuration.GetConnectionString("Database");
 
         var query = @"
-            SELECT m.Id, m.ScoreDocumentHistoryId, m.Content
-            FROM MusicXmlDocuments m
-            JOIN ScoreDocumentHistories h ON m.ScoreDocumentHistoryId = h.Id
-            WHERE h.ScoreDocumentId = @ScoreDocumentId
-            ORDER BY h.Created DESC
+            SELECT m.Id, m.score_document_history_id, m.content
+            FROM score_documents.music_xml_document m
+            JOIN score_documents.score_document_history h ON m.score_document_history_id = h.Id
+            WHERE h.score_document_id = @score_document_id
+            AND h.user_id = @user_id
+            ORDER BY h.created DESC
             LIMIT 1;
         ";
 
@@ -255,127 +378,155 @@ public class ScoreDocumentRepository
         await connection.OpenAsync();
 
         await using var command = new NpgsqlCommand(query, connection);
-        command.Parameters.AddWithValue("ScoreDocumentId", scoreDocumentId);
+        command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
+        command.Parameters.AddWithValue("user_id", userId);
 
         await using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
             return new MusicXmlDocument
             {
-                Id = reader.GetGuid(reader.GetOrdinal("Id")),
-                ScoreDocumentHistoryId = reader.GetGuid(reader.GetOrdinal("ScoreDocumentHistoryId")),
-                Content = reader.GetString(reader.GetOrdinal("Content"))
+                Id = reader.GetGuid(reader.GetOrdinal("id")),
+                ScoreDocumentHistoryId = reader.GetGuid(reader.GetOrdinal("score_document_history_id")),
+                Content = reader.GetString(reader.GetOrdinal("content"))
             };
         }
 
         return null; // Return null if no document is found
     }
 
-    public async Task<bool> DeleteScoreDocumentHistoryAsync(Guid scoreDocumentHistoryId)
+
+
+    public async Task UpdateScoreDocumentAsync(string userId, PutScoreDocumentBody scoreDocument)
     {
-        var connectionString = "Host=your_host;Port=5432;Database=your_database;Username=your_user;Password=your_password";
+        var connectionString = _configuration.GetConnectionString("Database");
+
+        var query = @"
+            UPDATE score_documents.score_document
+            SET name = @name,
+                modified = @modified,
+                is_public = @is_public
+            WHERE user_id = @user_id AND id = @id;
+        ";
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            await using var command = new NpgsqlCommand(query, connection);
+
+            // Set parameters
+            command.Parameters.AddWithValue("user_id", userId);
+            command.Parameters.AddWithValue("id", scoreDocument.Id);
+            command.Parameters.AddWithValue("name", scoreDocument.Name);
+            command.Parameters.AddWithValue("is_public", scoreDocument.IsPublic);
+            command.Parameters.AddWithValue("modified", DateTime.UtcNow);
+
+            // Execute the update
+            await command.ExecuteNonQueryAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+
+
+    public async Task<bool> DeleteScoreDocumentAsync(string userId, Guid scoreDocumentId)
+    {
+        var connectionString = _configuration.GetConnectionString("Database");
+
+        var deleteScoreDocumentQuery = @"
+            DELETE FROM score_documents.score_document 
+            WHERE Id = @score_document_id AND user_id = @user_id;
+        ";
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            await using var command = new NpgsqlCommand(deleteScoreDocumentQuery, connection);
+            command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
+            command.Parameters.AddWithValue("user_id", userId);
+
+            var rowsAffected = await command.ExecuteNonQueryAsync();
+
+            await transaction.CommitAsync();
+
+            // Return true if the row was successfully deleted
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<bool> DeleteScoreDocumentHistoryAsync(string userId, Guid scoreDocumentId, Guid scoreDocumentHistoryId)
+    {
+        var connectionString = _configuration.GetConnectionString("Database");
 
         var checkRemainingHistoriesQuery = @"
             SELECT COUNT(*) 
-            FROM ScoreDocumentHistories 
-            WHERE ScoreDocumentId = (
-                SELECT ScoreDocumentId 
-                FROM ScoreDocumentHistories 
-                WHERE Id = @ScoreDocumentHistoryId
+            FROM score_documents.score_document_history 
+            WHERE score_document_id = (
+                SELECT score_document_id 
+                FROM  score_documents.score_document_history  
+                WHERE Id = @score_document_history_id
             );
         ";
 
-        var deleteMusicXmlDocumentQuery = @"
-            DELETE FROM MusicXmlDocuments 
-            WHERE ScoreDocumentHistoryId = @ScoreDocumentHistoryId;
-        ";
-
         var deleteScoreDocumentHistoryQuery = @"
-            DELETE FROM ScoreDocumentHistories 
-            WHERE Id = @ScoreDocumentHistoryId;
+            DELETE FROM score_documents.score_document_history 
+            WHERE id = @score_document_history_id AND score_document_id = @score_document_id AND user_id = @user_id;
         ";
 
-        await using (var connection = new NpgsqlConnection(connectionString))
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        // Check if at least two versions exist
+        await using (var command = new NpgsqlCommand(checkRemainingHistoriesQuery, connection))
         {
-            await connection.OpenAsync();
+            command.Parameters.AddWithValue("score_document_history_id", scoreDocumentHistoryId);
 
-            await using (var transaction = await connection.BeginTransactionAsync())
+            var remainingCount = (long)(await command.ExecuteScalarAsync() ?? 0);
+            if (remainingCount <= 1)
             {
-                try
-                {
-                    // Check if at least two versions exist
-                    int remainingCount;
-                    await using (var command = new NpgsqlCommand(checkRemainingHistoriesQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("ScoreDocumentHistoryId", scoreDocumentHistoryId);
-
-                        remainingCount = (int)(await command.ExecuteScalarAsync() ?? 0);
-                    }
-
-                    if (remainingCount <= 1)
-                    {
-                        // Abort if this is the only remaining version
-                        return false;
-                    }
-
-                    // Delete associated MusicXmlDocument
-                    await using (var command = new NpgsqlCommand(deleteMusicXmlDocumentQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("ScoreDocumentHistoryId", scoreDocumentHistoryId);
-                        await command.ExecuteNonQueryAsync();
-                    }
-
-                    // Delete ScoreDocumentHistory
-                    await using (var command = new NpgsqlCommand(deleteScoreDocumentHistoryQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("ScoreDocumentHistoryId", scoreDocumentHistoryId);
-                        await command.ExecuteNonQueryAsync();
-                    }
-
-                    // Commit the transaction
-                    await transaction.CommitAsync();
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    // Roll back the transaction in case of an error
-                    await transaction.RollbackAsync();
-                    throw; // Re-throw exception for logging or further handling
-                }
+                // Abort if this is the only remaining version
+                return false;
             }
         }
-    }
 
-    public async Task<bool> DeleteScoreDocumentAsync(Guid scoreDocumentId)
-    {
-        var connectionString = "Host=your_host;Port=5432;Database=your_database;Username=your_user;Password=your_password";
-
-        var deleteScoreDocumentQuery = @"
-            DELETE FROM ScoreDocuments 
-            WHERE Id = @ScoreDocumentId;
-        ";
-
-        await using (var connection = new NpgsqlConnection(connectionString))
+        await using var transaction = await connection.BeginTransactionAsync();
+        try
         {
-            await connection.OpenAsync();
-
-            try
+            // Delete ScoreDocumentHistory
+            await using (var command = new NpgsqlCommand(deleteScoreDocumentHistoryQuery, connection))
             {
-                await using (var command = new NpgsqlCommand(deleteScoreDocumentQuery, connection))
-                {
-                    command.Parameters.AddWithValue("ScoreDocumentId", scoreDocumentId);
-                    var rowsAffected = await command.ExecuteNonQueryAsync();
+                command.Parameters.AddWithValue("score_document_history_id", scoreDocumentHistoryId);
+                command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
+                command.Parameters.AddWithValue("user_id", userId);
+                await command.ExecuteNonQueryAsync();
+            }
 
-                    // Return true if the row was successfully deleted
-                    return rowsAffected > 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log or handle the exception as needed
-                throw;
-            }
+            // Commit the transaction
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Roll back the transaction in case of an error
+            await transaction.RollbackAsync();
+            throw; // Re-throw exception for logging or further handling
         }
     }
-
 }
