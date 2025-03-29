@@ -272,7 +272,7 @@ public class ScoreDocumentRepository
         var connectionString = _configuration.GetConnectionString("Database");
 
         var query = @"
-            SELECT d.*, h.*
+            SELECT d.id AS document_id, h.id AS history_id, d.*, h.*
             FROM score_documents.score_document d
             LEFT JOIN score_documents.score_document_history h ON d.Id = h.score_document_id
             WHERE d.user_id = @user_id AND d.id = @score_document_id;
@@ -307,11 +307,11 @@ public class ScoreDocumentRepository
             };
 
             // Map ScoreDocumentHistory if available
-            if (!reader.IsDBNull(reader.GetOrdinal("score_document_id")))
+            if (!reader.IsDBNull(reader.GetOrdinal("history_id")))
             {
                 var history = new ScoreDocumentHistory
                 {
-                    Id = reader.GetGuid(reader.GetOrdinal("id")),
+                    Id = reader.GetGuid(reader.GetOrdinal("history_id")),
                     ScoreDocumentId = reader.GetGuid(reader.GetOrdinal("score_document_id")),
                     UserId = reader.GetString(reader.GetOrdinal("user_id")),
                     Created = reader.GetDateTime(reader.GetOrdinal("created"))

@@ -2,8 +2,14 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './router'
+import { keycloak } from "./services/auth"
+import initializeRouter from './router'
 
 const app = createApp(App)
-app.use(router)
-app.mount('#app')
+
+keycloak.init({ onLoad: "check-sso", checkLoginIframe: false }).then(() => {
+
+    app.use(initializeRouter())
+    app.mount('#app')
+    
+});
