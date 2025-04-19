@@ -1,17 +1,32 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getUserScores } from "../../services/api";
+import { getUserScores, deleteScoreDocument } from "@/services/api";
 
 const scores = ref<Array<{ id: string; name: string; views: number; created: string; modified: string; isPublic: boolean }>>([]);
 
-onMounted(async () => {
+onMounted(refreshList);
+
+async function refreshList(){
     const rawScores = await getUserScores();
     scores.value = rawScores.map(score => ({
         ...score,
         created: new Date(score.created).toLocaleDateString(),
         modified: new Date(score.modified).toLocaleDateString()
     }));
-});
+}
+
+async function deleteScore(scoreId: string) {
+    const confirmed = confirm("Are you sure you want to completely delete this score? There is no undo.");
+    if (!confirmed) return;
+
+    const success = await deleteScoreDocument(scoreId);
+    if (success){
+        await refreshList();
+    } else {
+        alert("Something went wrong.")
+    }
+}
+
 </script>
 
 <template>
@@ -20,17 +35,31 @@ onMounted(async () => {
 
         <ul v-if="scores.length">
             <li v-for="score in scores" :key="score.id" class="score-item">
-                <router-link :to="`/scores/edit?id=${score.id}`" class="score-link">
-                    <span class="score-name">{{ score.name }}</span><br>
-                    <span class="score-details">Views: {{ score.views }} | Created: {{ score.created }} | Modified: {{
-                        score.modified }} | </span>
-                    <span v-if="score.isPublic" class="public-badge">Public</span>
-                    <span v-else class="private-badge">Private</span>
-                </router-link>
+                <div class="score-content">
+                    <div class="score-info">
+                        <router-link :to="`/scores/edit?id=${score.id}`" class="score-link">
+                            <span class="score-name">{{ score.name }}</span>
+                            <span>
+                                Views: {{ score.views }} | Created: {{ score.created }} | Modified: {{ score.modified }} | 
+                            </span>
+                            <span v-if="score.isPublic" class="public-badge">Public</span>
+                            <span v-else class="private-badge">Private</span>
+                        </router-link>
+                    </div>
+                    <div class="score-actions">
+                        <router-link :to="`/scores/edit?id=${score.id}`"><button class="btn">Edit</button></router-link>
+                        <button @click="deleteScore(score.id)" class="btn action-button delete-button">✖</button>
+                    </div>
+                </div>
             </li>
         </ul>
 
+
         <p v-else class="no-scores">No sheet music found.</p>
+
+        <router-link to="/scores/create">
+            <button class="btn">Create new</button>
+        </router-link>
     </main>
 </template>
 
@@ -43,19 +72,9 @@ onMounted(async () => {
 }
 
 .scores-title {
-    font-size: 1.875rem; /* Equivalent to text-3xl */
+    font-size: 1.875rem;
     font-weight: bold;
     margin-bottom: 1.5rem;
-}
-
-.score-link {
-    display: block;
-    color: var(--text-light);
-    text-decoration: none;
-}
-
-.score-link:hover {
-    opacity: 0.8;
 }
 
 .score-item {
@@ -69,34 +88,67 @@ onMounted(async () => {
     margin: 1rem 0;
 }
 
-.score-name {
-    font-size: 1.25rem; /* Equivalent to text-xl */
-    font-weight: 600;
+.score-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
-.score-details {
-    font-size: 0.875rem; /* Equivalent to text-sm */
-    color: #4b5563; /* Equivalent to gray-600 */
-    margin-top: 0.5rem;
+.score-info {
+    flex-grow: 1;
+}
+
+.score-link {
+    display: block;
+    color: var(--text-light);
+    text-decoration: none;
+}
+
+.score-link:hover {
+    opacity: 0.8;
+}
+
+.score-name {
+    display: block;
+    text-decoration: none;
+    font-size: 1.875rem;
+    font-weight: bold;
+}
+
+.score-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-button {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease-in-out;
+    border-radius: 50%;
 }
 
 .public-badge {
-    font-size: 0.75rem; /* Equivalent to text-xs */
     font-weight: bold;
-    color: #16a34a; /* Equivalent to green-600 */
-    margin-top: 0.25rem;
+    color: #16a34a;
 }
 
 .private-badge {
-    font-size: 0.75rem; /* Equivalent to text-xs */
     font-weight: bold;
-    color: #c8db1c; /* Equivalent to green-600 */
-    margin-top: 0.25rem;
+    color: #c8db1c;
 }
 
 .no-scores {
-    font-size: 1.125rem; /* Equivalent to text-lg */
-    color: #6b7280; /* Equivalent to gray-500 */
+    font-size: 1.125rem;
+    /* Equivalent to text-lg */
+    color: #6b7280;
+    /* Equivalent to gray-500 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -113,20 +165,19 @@ onMounted(async () => {
         background-color: var(--secondary-dark);
     }
 
-    .score-details {
-        color: #d1d5db; /* Equivalent to gray-300 */
-    }
-
     .public-badge {
-        color: #4ade80; /* Equivalent to green-400 */
+        color: #4ade80;
+        /* Equivalent to green-400 */
     }
 
     .private-badge {
-        color: #c7d643; /* Equivalent to green-400 */
+        color: #c7d643;
+        /* Equivalent to green-400 */
     }
 
     .no-scores {
-        color: #9ca3af; /* Equivalent to gray-400 */
+        color: #9ca3af;
+        /* Equivalent to gray-400 */
     }
 }
 </style>

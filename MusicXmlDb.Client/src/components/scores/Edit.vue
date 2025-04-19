@@ -23,15 +23,15 @@
         </div>
 
 
-
         <!-- Score History Table -->
         <h2 class="history-title">Version History</h2>
 
-        <div class="upload-section">
-            <label for="file-upload" class="upload-label">Upload New Version:</label>
-            <input type="file" id="file-upload" @change="handleFileChange" accept=".xml,.musicxml"
-                class="upload-input" />
-            <button @click="uploadNewVersion" class="btn upload-button">Upload</button>
+        <div class="score-controls">
+            <FileUpload @fileChange="updateSelectedFile" style="width: 100%;"></FileUpload>
+
+            <button @click="uploadNewVersion" :disabled="!selectedFile" class="btn save-button">
+                Upload
+            </button>
         </div>
 
         <table class="history-table">
@@ -55,22 +55,35 @@
             </tbody>
         </table>
 
+        <div class="score-controls">
+            <button class="btn" @click="deleteScore">Delete this score</button>
+        </div>
 
-
+        <router-link to="/scores" class="btn sticky-button">
+            < Back to scores</router-link>
 
     </main>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { getScoreDetails, updateScore, uploadScoreVersion, deleteScoreVersion, downloadScoreVersion  } from "@/services/api";
+import { useRoute, useRouter } from "vue-router";
+import { getScoreDetails, updateScore, uploadScoreVersion, deleteScoreVersion, downloadScoreVersion, deleteScoreDocument } from "@/services/api";
 import type { ScoreDocument } from "@/models/ScoreDocument";
 import { getRelativeTime, formatDate } from "@/services/timeAndDate";
+import FileUpload from "@/components/scores/FileUpload.vue"
 
 const route = useRoute();
+const router = useRouter();
 const score = ref<ScoreDocument | null>(null);
 const saveStatus = ref<string | null>(null);
+const selectedFile = ref<File | null>(null);
+
+const updateSelectedFile = (file: File | null) => {
+    selectedFile.value = file;
+};
+
+onMounted(fetchScoreDetails);
 
 // Fetch Score Details
 async function fetchScoreDetails() {
@@ -97,25 +110,6 @@ async function saveChanges() {
     }
 }
 
-onMounted(fetchScoreDetails);
-
-
-
-const selectedFile = ref<File | null>(null);
-
-function handleFileChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files ? input.files[0] : null;
-
-    if (file && !file.name.match(/\.(xml|musicxml)$/)) {
-        alert("Invalid file type. Please select a .xml or .musicxml file.");
-        selectedFile.value = null;
-        input.value = ""; // Clear input
-        return;
-    }
-
-    selectedFile.value = file;
-}
 
 async function uploadNewVersion() {
     if (!selectedFile.value) {
@@ -133,6 +127,7 @@ async function uploadNewVersion() {
         alert("Failed to upload score version.");
     }
 }
+
 
 async function deleteVersion(versionId: string) {
     if (!score.value) {
@@ -162,7 +157,7 @@ async function deleteVersion(versionId: string) {
 
 
 async function downloadVersion(versionId: string) {
-    if (!score.value){
+    if (!score.value) {
         return;
     }
 
@@ -171,6 +166,26 @@ async function downloadVersion(versionId: string) {
     } catch (error) {
         console.error("Error downloading score version:", error);
         alert("Failed to download file.");
+    }
+}
+
+
+async function deleteScore() {
+    if (!score.value) {
+        return;
+    }
+
+    const scoreId = route.query.id as string;
+    if (!scoreId) return;
+
+    const confirmed = confirm("Are you sure you want to completely delete this score? There is no undo.");
+    if (!confirmed) return;
+
+    const success = await deleteScoreDocument(scoreId);
+    if (success){
+        router.push("/scores")
+    } else {
+        alert("Something went wrong.")
     }
 }
 
@@ -242,7 +257,6 @@ async function downloadVersion(versionId: string) {
     font-weight: bold;
     border: none;
     border-radius: 6px;
-    cursor: pointer;
 }
 
 .save-message {
@@ -292,8 +306,6 @@ async function downloadVersion(versionId: string) {
 .upload-section {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    /* Ensures full left alignment */
     width: 100%;
     max-width: 32rem;
     margin-top: 1rem;
@@ -313,8 +325,11 @@ async function downloadVersion(versionId: string) {
 }
 
 .upload-button {
-    margin-top: 0.5rem;
+    margin-top: 1rem;
     padding: 0.5rem 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
 }
 
 .delete-button {
@@ -325,5 +340,12 @@ async function downloadVersion(versionId: string) {
 .download-button {
     margin-left: 1rem;
     padding: 0.4rem 0.8rem;
+}
+
+.sticky-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    text-decoration: none;
 }
 </style>

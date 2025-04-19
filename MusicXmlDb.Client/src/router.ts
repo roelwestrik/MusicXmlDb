@@ -30,6 +30,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "edit",
         component: () => import('./components/scores/Edit.vue')
+      },
+      {
+        path: "create",
+        component: () => import('./components/scores/Create.vue')
       }
     ]
   },

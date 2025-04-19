@@ -5,6 +5,56 @@ import { getUpdatedToken } from "../services/auth"; // Import the auth service
 const BASE_ADRESS = "https://localhost:8081/api"
 
 /**
+ * Upload a new score version.
+ */
+export async function createScore(name: string, isPublic: boolean, file: File): Promise<ScoreDocument | null> {
+    try {
+        const token = await getUpdatedToken();
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("isPublic", isPublic.toString())
+        formData.append("formFile", file);
+
+        const result = await axios.post<ScoreDocument>(`${BASE_ADRESS}/ScoreDocuments/`, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        return result.data;
+    } catch (error) {
+        console.error("Error uploading score version:", error);
+        return null;
+    }
+}
+
+/**
+ * Upload a new score version.
+ */
+export async function uploadScoreVersion(scoreId: string, file: File): Promise<boolean> {
+    try {
+        const token = await getUpdatedToken();
+        const formData = new FormData();
+        formData.append("scoreDocumentId", scoreId);
+        formData.append("formFile", file);
+
+        await axios.post(`${BASE_ADRESS}/ScoreDocuments/${scoreId}`, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Error uploading score version:", error);
+        return false;
+    }
+}
+
+
+/**
  * Fetch all score documents with authentication.
  */
 export async function getUserScores(): Promise<ScoreDocument[]> {
@@ -106,29 +156,24 @@ export async function updateScore(scoreId: string, updatedScore: Partial<ScoreDo
 }
 
 /**
- * Upload a new score version.
+ * Delete a new score version.
  */
-export async function uploadScoreVersion(scoreId: string, file: File): Promise<boolean> {
+export async function deleteScoreDocument(scoreId: string): Promise<boolean> {
     try {
         const token = await getUpdatedToken();
-        const formData = new FormData();
-        formData.append("scoreDocumentId", scoreId);
-        formData.append("formFile", file);
 
-        await axios.post(`${BASE_ADRESS}/ScoreDocuments/${scoreId}`, formData, {
+        await axios.delete(`${BASE_ADRESS}/ScoreDocuments/${scoreId}`, {
             headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data",
-            },
+                Authorization: `Bearer ${token}`
+            }
         });
 
         return true;
     } catch (error) {
-        console.error("Error uploading score version:", error);
+        console.error("Error deleting score:", error);
         return false;
     }
 }
-
 
 /**
  * Delete a new score version.

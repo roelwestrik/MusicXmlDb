@@ -41,6 +41,17 @@ body {
     background-color: #7f0000; /* Equivalent to red-800 */
 }
 
+.btn:disabled {
+    background-color: #ccc; /* Gray background to indicate disabled state */
+    color: #777; /* Slightly dimmed text */
+    cursor: not-allowed; /* Changes cursor to indicate non-interactivity */
+    opacity: 0.7; /* Adds a visual cue */
+}
+
+.btn:disabled:hover {
+    background-color: #afafaf; /* Equivalent to red-800 */
+}
+
 @media (prefers-color-scheme: dark) {
     .btn {
         background-color: #b91c1c; /* Equivalent to red-700 */
