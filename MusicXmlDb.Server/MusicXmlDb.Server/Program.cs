@@ -21,7 +21,7 @@ public class Program
                 policy =>
                 {
                     policy
-                    .WithOrigins("http://localhost:5173")
+                    .WithOrigins("https://localhost:5173", "http://localhost:5173", "https://localhost:5174", "http://localhost:5174")
                     .AllowAnyHeader()
                     .AllowAnyMethod();
                 });

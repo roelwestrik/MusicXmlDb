@@ -11,8 +11,10 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./components/About.vue')
   },
   {
-    path: '/preview',
-    component: () => import('./components/Preview.vue')
+    path: "/scoredocument",
+    name: "ScoreDocument",
+    component: () => import("./components/ScoreDocument.vue"),
+    props: route => ({ id: route.query.id })
   },
   {
     path: '/scores',
@@ -26,8 +28,8 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("./components/scores/Scores.vue")
       },
       {
-        path: "view",
-        component: () => import('./components/scores/View.vue')
+        path: "edit",
+        component: () => import('./components/scores/Edit.vue')
       }
     ]
   },
@@ -44,7 +46,7 @@ const initializeRouter = () => {
   });
 
   router.beforeEach((to, from, next) => {
-    if (!(to.meta?.requiresAuthentication ?? false)) {
+    if (to.meta === undefined || !to.meta.requiresAuthentication) {
       return next();
     }
 

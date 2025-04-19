@@ -20,6 +20,17 @@ export const logout = async () => {
     await keycloak.logout({redirectUri: redirectUri});
 };
 
+export const getUserName: () => Promise<string> = async () => {
+    if(keycloak.isTokenExpired(5)){
+        await keycloak.updateToken()
+    }
+    if(keycloak.authenticated){
+        return (await keycloak.loadUserProfile()).firstName ?? "No email.";
+    }
+
+    return "Not Authenticated";
+}
+
 export const getUpdatedToken: () => Promise<string> = async () => {
     let token = "";
     try{
