@@ -110,9 +110,10 @@ public class Program
                 settings.EnableTryItOutByDefault();
             });
         }
-
-        // app.UseHttpsRedirection();
-        app.UseStaticFiles();
+        else
+        {
+            app.UseHttpsRedirection();
+        }
 
         app.UseAuthentication();
         app.UseRouting();
