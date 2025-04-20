@@ -11,7 +11,7 @@ namespace MusicXmlDb.Server.ScoreDocuments.Manage
     public class ManageController : ControllerBase
     {
         private readonly IMusicXmlValidator musicXmlValidator;
-        private readonly PrivateScoreDocumentRepository scoreDocumentRepository;
+        private readonly IPrivateScoreDocumentRepository scoreDocumentRepository;
 
         public ManageController(IMusicXmlValidator musicXmlValidator, PrivateScoreDocumentRepository scoreDocumentRepository)
         {
@@ -51,7 +51,7 @@ namespace MusicXmlDb.Server.ScoreDocuments.Manage
         }
 
         [HttpGet("{scoreDocumentId}/{historyId}")]
-        public async Task<IActionResult> GetScoreDocument(Guid scoreDocumentId, Guid historyId)
+        public async Task<ActionResult<MusicXmlDocument>> GetScoreDocument(Guid scoreDocumentId, Guid historyId)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
             if (user == null)
@@ -65,10 +65,10 @@ namespace MusicXmlDb.Server.ScoreDocuments.Manage
                 return NotFound();
             }
 
-            return Content(xmlDocument.Content, "application/xml");
+            return xmlDocument;
         }
 
-        [HttpGet("{scoreDocumentId}/{historyId}/download")]
+        [HttpGet("{scoreDocumentId:guid}/{historyId:guid}/download")]
         public async Task<IActionResult> DownloadScoreDocument(Guid scoreDocumentId, Guid historyId)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);

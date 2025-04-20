@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MusicXmlDb.Server.MusicXmlDocuments;
 using MusicXmlDb.Server.ScoreDocuments.Manage;
+using MusicXmlDb.Server.ScoreDocuments.Profile;
+using MusicXmlDb.Server.ScoreDocuments.View;
 
 namespace MusicXmlDb.Server;
 
@@ -28,8 +30,9 @@ public class Program
         });
 
         // Add services to the container.
-        var connectionString = builder.Configuration.GetConnectionString("Database");
         builder.Services.AddTransient<PrivateScoreDocumentRepository>();
+        builder.Services.AddTransient<PublicScoreDocumentRepository>();
+        builder.Services.AddTransient<ProfileScoreDocumentRepository>();
         builder.Services.AddSingleton<IMusicXmlValidator, MusicXmlValidator>();
 
         builder.Services.AddControllers();

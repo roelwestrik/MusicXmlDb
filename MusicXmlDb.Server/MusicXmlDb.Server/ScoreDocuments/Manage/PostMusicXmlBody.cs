@@ -1,4 +1,4 @@
-﻿namespace MusicXmlDb.Server.ScoreDocuments;
+﻿namespace MusicXmlDb.Server.ScoreDocuments.Manage;
 
 public class PostMusicXmlBody
 {

@@ -9,21 +9,19 @@ namespace MusicXmlDb.Server.ScoreDocuments.View
     [ApiController]
     public class ViewController : ControllerBase
     {
-        private readonly IMusicXmlValidator musicXmlValidator;
-        private readonly PublicScoreDocumentRepository scoreDocumentRepository;
+        private readonly IPublicScoreDocumentRepository _scoreDocumentRepository;
 
-        public ViewController(IMusicXmlValidator musicXmlValidator, PublicScoreDocumentRepository scoreDocumentRepository)
+        public ViewController(PublicScoreDocumentRepository scoreDocumentRepository)
         {
-            this.musicXmlValidator = musicXmlValidator;
-            this.scoreDocumentRepository = scoreDocumentRepository;
+            this._scoreDocumentRepository = scoreDocumentRepository;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:guid}")]
         public async Task<ActionResult<ScoreDocument>> GetScoreDocument(Guid id)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
 
-            var scoreDocumentModel = await scoreDocumentRepository.GetScoreDocumentWithHistoriesAsync(id);
+            var scoreDocumentModel = await _scoreDocumentRepository.GetScoreDocumentWithHistoriesAsync(id);
             if (scoreDocumentModel is null)
             {
                 return NotFound();
@@ -40,7 +38,7 @@ namespace MusicXmlDb.Server.ScoreDocuments.View
             return scoreDocumentModel;
         }
 
-        [HttpGet("{scoreDocumentId}/{historyId}")]
+        [HttpGet("{scoreDocumentId:guid}/{historyId:guid}")]
         public async Task<IActionResult> GetScoreDocument(Guid scoreDocumentId, Guid historyId)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
@@ -49,7 +47,7 @@ namespace MusicXmlDb.Server.ScoreDocuments.View
                 return Unauthorized();
             }
 
-            var xmlDocument = await scoreDocumentRepository.GetMusicXmlDocumentAsync(scoreDocumentId, historyId);
+            var xmlDocument = await _scoreDocumentRepository.GetMusicXmlDocumentAsync(scoreDocumentId, historyId);
             if (xmlDocument == null)
             {
                 return NotFound();

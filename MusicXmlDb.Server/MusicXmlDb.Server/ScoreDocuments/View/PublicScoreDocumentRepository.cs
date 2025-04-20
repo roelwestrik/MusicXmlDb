@@ -3,20 +3,20 @@ using Npgsql;
 
 namespace MusicXmlDb.Server.ScoreDocuments.View;
 
-public class PublicScoreDocumentRepository
+public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
 {
-    private readonly IConfiguration configuration;
+    private readonly IConfiguration _configuration;
 
     public PublicScoreDocumentRepository(IConfiguration configuration)
     {
-        this.configuration = configuration;
+        this._configuration = configuration;
     }
 
     public async Task<ScoreDocument?> GetScoreDocumentWithHistoriesAsync(Guid id)
     {
-        var connectionString = configuration.GetConnectionString("Database");
+        var connectionString = _configuration.GetConnectionString("Database");
 
-        var query = @"
+        var query = """
             SELECT 
                 d.id AS document_id,
                 h.id AS history_id, 
@@ -25,7 +25,7 @@ public class PublicScoreDocumentRepository
             LEFT JOIN score_documents.score_document_history h 
                 ON d.Id = h.score_document_id
             WHERE d.isPublic = True AND d.id = @score_document_id;
-        ";
+        """;
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
@@ -74,9 +74,9 @@ public class PublicScoreDocumentRepository
 
     public async Task<MusicXmlDocument?> GetMusicXmlDocumentAsync(Guid scoreDocumentId, Guid scoreDocumentHistoryId)
     {
-        var connectionString = configuration.GetConnectionString("Database");
+        var connectionString = _configuration.GetConnectionString("Database");
 
-        var query = @"
+        var query = """
             SELECT
                 m.Id, 
                 m.score_document_history_id, 
@@ -89,7 +89,7 @@ public class PublicScoreDocumentRepository
             WHERE 
                 d.isPublic = TRUE
                 AND h.id = @score_document_history_id;
-        ";
+        """;
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();

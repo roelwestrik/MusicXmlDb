@@ -3,38 +3,38 @@ using Npgsql;
 
 namespace MusicXmlDb.Server.ScoreDocuments.Manage;
 
-public class PrivateScoreDocumentRepository
+public class PrivateScoreDocumentRepository : IPrivateScoreDocumentRepository
 {
     private readonly IConfiguration _configuration;
 
 
 
-    public PrivateScoreDocumentRepository(IConfiguration _configuration)
+    public PrivateScoreDocumentRepository(IConfiguration configuration)
     {
-        this._configuration = _configuration;
+        this._configuration = configuration;
     }
 
 
 
-    public async Task<PostScoreDocumentResponse> InsertScoreDocumentAsync(string user_id, PostScoreDocumentBody body)
+    public async Task<PostScoreDocumentResponse> InsertScoreDocumentAsync(string userId, PostScoreDocumentBody body)
     {
         var connectionString = _configuration.GetConnectionString("Database");
 
         // SQL Queries
-        var insertScoreDocumentQuery = @"
-            INSERT INTO score_documents.score_document (id, user_id, name, views, created, modified, is_public)
-            VALUES (@id, @user_id, @name, @views, @created, @modified, @is_public);
-        ";
+        var insertScoreDocumentQuery = """
+           INSERT INTO score_documents.score_document (id, user_id, name, views, created, modified, is_public)
+           VALUES (@id, @user_id, @name, @views, @created, @modified, @is_public);
+       """;
 
-        var insertScoreDocumentHistoryQuery = @"
+        var insertScoreDocumentHistoryQuery = """
             INSERT INTO score_documents.score_document_history (id, score_document_id, user_id, created)
             VALUES (@id, @score_document_id, @user_id, @created);
-        ";
+        """;
 
-        var insertMusicXmlDocumentQuery = @"
+        var insertMusicXmlDocumentQuery = """
             INSERT INTO score_documents.music_xml_document (id, score_document_history_id, content)
             VALUES (@id, @score_document_history_id, XMLPARSE(DOCUMENT @content));
-        ";
+        """;
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
@@ -47,7 +47,7 @@ public class PrivateScoreDocumentRepository
             await using (var command = new NpgsqlCommand(insertScoreDocumentQuery, connection))
             {
                 command.Parameters.AddWithValue("id", scoreDocumentId);
-                command.Parameters.AddWithValue("user_id", user_id);
+                command.Parameters.AddWithValue("user_id", userId);
                 command.Parameters.AddWithValue("name", body.DocumentName);
                 command.Parameters.AddWithValue("views", 0);
                 command.Parameters.AddWithValue("created", DateTime.UtcNow);
@@ -63,7 +63,7 @@ public class PrivateScoreDocumentRepository
             {
                 command.Parameters.AddWithValue("id", scoreDocumentHistoryId);
                 command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
-                command.Parameters.AddWithValue("user_id", user_id);
+                command.Parameters.AddWithValue("user_id", userId);
                 command.Parameters.AddWithValue("created", DateTime.UtcNow);
 
                 await command.ExecuteNonQueryAsync();
@@ -181,58 +181,54 @@ public class PrivateScoreDocumentRepository
             WHERE d.user_id = @user_id;
         ";
 
-        await using (var connection = new NpgsqlConnection(connectionString))
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new NpgsqlCommand(query, connection);
+        command.Parameters.AddWithValue("user_id", userId);
+
+        await using var reader = await command.ExecuteReaderAsync();
+        var documents = new Dictionary<Guid, ScoreDocument>();
+
+        while (await reader.ReadAsync())
         {
-            await connection.OpenAsync();
+            // Use the correct ID from the `score_document` table
+            var scoreDocumentId = reader.GetGuid(reader.GetOrdinal("document_id"));
 
-            await using (var command = new NpgsqlCommand(query, connection))
+            // If the ScoreDocument is not already in the dictionary, add it
+            if (!documents.TryGetValue(scoreDocumentId, out var scoreDocument))
             {
-                command.Parameters.AddWithValue("user_id", userId);
-
-                await using var reader = await command.ExecuteReaderAsync();
-                var documents = new Dictionary<Guid, ScoreDocument>();
-
-                while (await reader.ReadAsync())
+                scoreDocument = new ScoreDocument
                 {
-                    // Use the correct ID from the `score_document` table
-                    var scoreDocumentId = reader.GetGuid(reader.GetOrdinal("document_id"));
+                    Id = scoreDocumentId,
+                    UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                    Name = reader.GetString(reader.GetOrdinal("name")),
+                    Views = reader.GetInt32(reader.GetOrdinal("views")),
+                    Created = reader.GetDateTime(reader.GetOrdinal("created")),
+                    Modified = reader.GetDateTime(reader.GetOrdinal("modified")),
+                    IsPublic = reader.GetBoolean(reader.GetOrdinal("is_public")),
+                    History = new List<ScoreDocumentHistory>()
+                };
 
-                    // If the ScoreDocument is not already in the dictionary, add it
-                    if (!documents.TryGetValue(scoreDocumentId, out var scoreDocument))
-                    {
-                        scoreDocument = new ScoreDocument
-                        {
-                            Id = scoreDocumentId,
-                            UserId = reader.GetString(reader.GetOrdinal("user_id")),
-                            Name = reader.GetString(reader.GetOrdinal("name")),
-                            Views = reader.GetInt32(reader.GetOrdinal("views")),
-                            Created = reader.GetDateTime(reader.GetOrdinal("created")),
-                            Modified = reader.GetDateTime(reader.GetOrdinal("modified")),
-                            IsPublic = reader.GetBoolean(reader.GetOrdinal("is_public")),
-                            History = new List<ScoreDocumentHistory>()
-                        };
+                documents[scoreDocumentId] = scoreDocument;
+            }
 
-                        documents[scoreDocumentId] = scoreDocument;
-                    }
+            // Map ScoreDocumentHistory if available
+            if (!reader.IsDBNull(reader.GetOrdinal("history_id")))
+            {
+                var history = new ScoreDocumentHistory
+                {
+                    Id = reader.GetGuid(reader.GetOrdinal("history_id")),
+                    ScoreDocumentId = reader.GetGuid(reader.GetOrdinal("document_id")),
+                    UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                    Created = reader.GetDateTime(reader.GetOrdinal("created"))
+                };
 
-                    // Map ScoreDocumentHistory if available
-                    if (!reader.IsDBNull(reader.GetOrdinal("history_id")))
-                    {
-                        var history = new ScoreDocumentHistory
-                        {
-                            Id = reader.GetGuid(reader.GetOrdinal("history_id")),
-                            ScoreDocumentId = reader.GetGuid(reader.GetOrdinal("document_id")),
-                            UserId = reader.GetString(reader.GetOrdinal("user_id")),
-                            Created = reader.GetDateTime(reader.GetOrdinal("created"))
-                        };
-
-                        scoreDocument.History.Add(history);
-                    }
-                }
-
-                scoreDocuments = documents.Values.ToList();
+                scoreDocument.History.Add(history);
             }
         }
+
+        scoreDocuments = documents.Values.ToList();
 
         return scoreDocuments;
     }
