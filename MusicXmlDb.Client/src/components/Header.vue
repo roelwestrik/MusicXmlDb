@@ -61,6 +61,9 @@ onUnmounted(() => {
             </template>
         </nav>
     </header>
+    <div class="accent-line">
+
+    </div>
 </template>
 
 
@@ -75,6 +78,12 @@ onUnmounted(() => {
     color: var(--text-light);
 }
 
+.accent-line {
+    background-color: var(--accent-red);
+    height: 3px;
+    width: 100
+}
+
 /* Logo */
 .logo img {
     height: 2.5rem;
@@ -82,13 +91,15 @@ onUnmounted(() => {
     font-weight: bold;
 }
 
-.greet{
+.greet {
     font-size: 1.125rem;
 }
 
 .nav {
-    font-size: 1.25rem; /* Equivalent to text-xl */
-    font-weight: bold; /* Equivalent to font-bold */
+    font-size: 1.25rem;
+    /* Equivalent to text-xl */
+    font-weight: bold;
+    /* Equivalent to font-bold */
     display: flex;
     align-items: center;
     display: flex;
@@ -124,7 +135,8 @@ onUnmounted(() => {
 }
 
 .dropdown-item:hover {
-    background-color: #e5e7eb; /* Equivalent to gray-200 */
+    background-color: #e5e7eb;
+    /* Equivalent to gray-200 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -132,17 +144,20 @@ onUnmounted(() => {
         background-color: var(--secondary-dark);
         color: var(--text-dark);
     }
-    
+
     .dropdown-menu {
         background-color: var(--secondary-dark);
         color: var(--text-dark);
     }
+
     .dropdown-item {
-        background-color: var(--secondary-dark); /* Equivalent to gray-700 */
+        background-color: var(--secondary-dark);
+        /* Equivalent to gray-700 */
     }
 
     .dropdown-item:hover {
-        background-color: var(--primary-dark); /* Equivalent to gray-700 */
+        background-color: var(--primary-dark);
+        /* Equivalent to gray-700 */
     }
 }
 </style>

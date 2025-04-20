@@ -56,18 +56,21 @@ services:
     build:
       context: ./MusicXmlDb.Server/
       dockerfile: ./MusicXmlDb.Server/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - musicxmldb.postgres
     ports:
       - "8080:8080"
       - "8081:8081"
 
-  # musicxmldb.client:
-  #   container_name: client
-  #   build:
-  #     context: ./MusicXmlDb.Client/
-  #     dockerfile: ./Dockerfile
-  #   ports:
-  #     - "5173:8080"
-  #   depends_on:
-  #     - musicxmldb.server
+  musicxmldb.client:
+    container_name: client
+    build:
+      context: ./MusicXmlDb.Client/
+      dockerfile: ./Dockerfile
+    ports:
+      - "5173:8080"
+    depends_on:
+      - musicxmldb.server
+

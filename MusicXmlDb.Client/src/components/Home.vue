@@ -16,7 +16,7 @@ main {
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: 100vh;
+    min-height: 80vh;
 }
 
 h1 {

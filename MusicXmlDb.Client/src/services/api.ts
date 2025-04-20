@@ -2,7 +2,7 @@ import axios from "axios";
 import type { ScoreDocument } from "../models/ScoreDocument";
 import { getUpdatedToken } from "../services/auth"; // Import the auth service
 
-const BASE_ADRESS = "https://localhost:8081/api"
+const BASE_ADRESS = "http://localhost:8080/api"
 
 /**
  * Upload a new score version.
