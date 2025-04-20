@@ -17,16 +17,16 @@ public class ProfileScoreDocumentRepository : IProfileScoreDocumentRepository
         var connectionString = _configuration.GetConnectionString("Database");
 
         const string query = """
-                                 SELECT 
-                                     d.id AS document_id,
-                                     d.uid as user_id,
-                                     h.id AS history_id, 
-                                     d.*, h.*
-                                 FROM score_documents.score_document d
-                                 LEFT JOIN score_documents.score_document_history h 
-                                     ON d.Id = h.score_document_id
-                                 WHERE d.isPublic = True AND d.uid = @user_id;
-                             """;
+            SELECT 
+                d.id AS document_id,
+                d.uid as user_id,
+                h.id AS history_id, 
+                d.*, h.*
+            FROM score_documents.score_document d
+            LEFT JOIN score_documents.score_document_history h 
+                ON d.Id = h.score_document_id
+            WHERE d.is_public = True AND d.uid = @user_id;
+        """;
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();

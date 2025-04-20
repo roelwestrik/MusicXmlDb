@@ -29,11 +29,12 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { getScoreDetails, getMusicXMLDocument } from "@/services/scoreDocuments";
+import { getScoreDetails } from "@/services/manageScoreDocuments";
 import { OpenSheetMusicDisplay, type IOSMDOptions } from "opensheetmusicdisplay";
 import type { ScoreDocument } from "@/models/ScoreDocument";
 import { formatDate } from "@/services/timeAndDate";
 import { AxiosError } from "axios";
+import { getMusicXMLDocument } from "@/services/viewScoreDocuments";
 
 const route = useRoute();
 const score = ref<ScoreDocument | null>(null);
@@ -70,6 +71,9 @@ async function fetchSelectedVersion() {
 
     try {
         const musicXML = await getMusicXMLDocument(score.value.id, selectedVersion.value);
+        if (musicXML == null){
+            return;
+        }
         const viewer = new OpenSheetMusicDisplay("score_document", options);
         await viewer.load(musicXML);
         viewer.render();

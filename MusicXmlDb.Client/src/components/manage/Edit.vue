@@ -2,7 +2,7 @@
     <main class="score-view" v-if="score !== null">
         <h1 class="score-title">Edit Score Document</h1>
         <p class="view-document-link">
-            <router-link :to="`/scoredocument?id=${route.query.id}`">View this document</router-link>
+            <router-link :to="`/view?id=${route.query.id}`">View this document</router-link>
         </p>
 
 
@@ -10,7 +10,8 @@
             <p class="modified-date">{{ getRelativeTime(new Date(score?.modified)) }}</p>
 
             <label class="form-label">Score Name:</label>
-            <input v-model="score.name" class="form-input" type="text" />
+            <input v-model="score.name" class="form-input" type="text" @input="validateName" required/>
+            <span v-if="nameError" class="error-message">{{ nameError }}</span>
 
             <label class="form-label mt-4">Visibility:</label>
             <select v-model="score.isPublic" class="form-input">
@@ -18,7 +19,7 @@
                 <option :value="false">Private</option>
             </select>
 
-            <button class="btn save-button" @click="saveChanges">Save Changes</button>
+            <button class="btn save-button" @click="saveChanges" :disabled="!isValid">Save Changes</button>
             <p v-if="saveStatus" class="save-message">{{ saveStatus }}</p>
         </div>
 
@@ -66,10 +67,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { getScoreDetails, updateScore, uploadScoreVersion, deleteScoreVersion, deleteScoreDocument } from "@/services/scoreDocuments";
-import { downloadScoreVersion } from "@/services/download";
+import { getScoreDetails, updateScore, uploadScoreVersion, deleteScoreVersion, deleteScoreDocument } from "@/services/manageScoreDocuments";
+import { downloadMusicXmlDocument } from "@/services/manageScoreDocuments";
 import type { ScoreDocument } from "@/models/ScoreDocument";
 import { getRelativeTime, formatDate } from "@/services/timeAndDate";
 import FileUpload from "@/components/manage/FileUpload.vue"
@@ -79,10 +80,17 @@ const router = useRouter();
 const score = ref<ScoreDocument | null>(null);
 const saveStatus = ref<string | null>(null);
 const selectedFile = ref<File | null>(null);
+const nameError = ref("");
 
 const updateSelectedFile = (file: File | null) => {
     selectedFile.value = file;
 };
+
+const validateName = () => {
+    nameError.value = score.value?.name ? "" : "Name is required.";
+};
+
+const isValid = computed(() => score.value != null && score.value.name.trim());
 
 onMounted(fetchScoreDetails);
 
@@ -163,7 +171,7 @@ async function downloadVersion(versionId: string) {
     }
 
     try {
-        await downloadScoreVersion(score.value.id, versionId);
+        await downloadMusicXmlDocument(score.value.id, versionId);
     } catch (error) {
         console.error("Error downloading score version:", error);
         alert("Failed to download file.");

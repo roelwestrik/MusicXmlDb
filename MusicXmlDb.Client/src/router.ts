@@ -11,9 +11,9 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('./components/About.vue')
   },
   {
-    path: "/scoredocument",
-    name: "ScoreDocument",
-    component: () => import("./components/ScoreDocument.vue"),
+    path: "/view",
+    name: "View",
+    component: () => import("./components/View.vue"),
     props: route => ({ id: route.query.id })
   },
   {

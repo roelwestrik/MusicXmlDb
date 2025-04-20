@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getUserScores, deleteScoreDocument } from "@/services/scoreDocuments";
+import { getUserScores, deleteScoreDocument } from "@/services/manageScoreDocuments";
 
 const scores = ref<Array<{ id: string; name: string; views: number; created: string; modified: string; isPublic: boolean }>>([]);
 

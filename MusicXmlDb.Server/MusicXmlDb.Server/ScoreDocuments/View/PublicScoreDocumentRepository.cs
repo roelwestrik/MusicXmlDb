@@ -12,11 +12,11 @@ public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
         this._configuration = configuration;
     }
 
-    public async Task<ScoreDocument?> GetScoreDocumentWithHistoriesAsync(Guid id)
+    public async Task<ScoreDocument?> GetScoreDocumentWithHistoriesAsync(string? userId, Guid id)
     {
         var connectionString = _configuration.GetConnectionString("Database");
 
-        var query = """
+        var query = userId is not null ? """
             SELECT 
                 d.id AS document_id,
                 h.id AS history_id, 
@@ -24,7 +24,16 @@ public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
             FROM score_documents.score_document d
             LEFT JOIN score_documents.score_document_history h 
                 ON d.Id = h.score_document_id
-            WHERE d.isPublic = True AND d.id = @score_document_id;
+            WHERE (d.is_public OR d.user_id = @user_id) AND d.id = @score_document_id;
+        """ : """
+            SELECT 
+                d.id AS document_id,
+                h.id AS history_id, 
+                d.*, h.*
+            FROM score_documents.score_document d
+            LEFT JOIN score_documents.score_document_history h 
+                ON d.Id = h.score_document_id
+            WHERE d.is_public AND d.id = @score_document_id;
         """;
 
         await using var connection = new NpgsqlConnection(connectionString);
@@ -32,6 +41,10 @@ public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
 
         await using var command = new NpgsqlCommand(query, connection);
         command.Parameters.AddWithValue("score_document_id", id);
+        if (userId is not null)
+        {
+            command.Parameters.AddWithValue("user_id", userId);
+        }
 
         await using var reader = await command.ExecuteReaderAsync();
 
@@ -72,11 +85,11 @@ public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
         return scoreDocument;
     }
 
-    public async Task<MusicXmlDocument?> GetMusicXmlDocumentAsync(Guid scoreDocumentId, Guid scoreDocumentHistoryId)
+    public async Task<MusicXmlDocument?> GetMusicXmlDocumentAsync(string? userId, Guid scoreDocumentId, Guid scoreDocumentHistoryId)
     {
         var connectionString = _configuration.GetConnectionString("Database");
 
-        var query = """
+        var query = userId is not null ? """
             SELECT
                 m.Id, 
                 m.score_document_history_id, 
@@ -87,7 +100,20 @@ public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
             JOIN score_documents.score_document d 
                 ON h.score_document_id = d.Id
             WHERE 
-                d.isPublic = TRUE
+                (d.is_public = TRUE OR d.user_id = @user_id)
+                AND h.id = @score_document_history_id;
+        """ : """
+            SELECT
+                m.Id, 
+                m.score_document_history_id, 
+                m.content
+            FROM score_documents.music_xml_document m
+            JOIN score_documents.score_document_history h 
+                ON m.score_document_history_id = h.Id
+            JOIN score_documents.score_document d 
+                ON h.score_document_id = d.Id
+            WHERE 
+                d.is_public = TRUE
                 AND h.id = @score_document_history_id;
         """;
 
@@ -97,6 +123,10 @@ public class PublicScoreDocumentRepository : IPublicScoreDocumentRepository
         await using var command = new NpgsqlCommand(query, connection);
         command.Parameters.AddWithValue("score_document_id", scoreDocumentId);
         command.Parameters.AddWithValue("score_document_history_id", scoreDocumentHistoryId);
+        if (userId is not null)
+        {
+            command.Parameters.AddWithValue("user_id", userId);
+        }
 
         await using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())

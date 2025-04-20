@@ -21,18 +21,10 @@ namespace MusicXmlDb.Server.ScoreDocuments.View
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
 
-            var scoreDocumentModel = await _scoreDocumentRepository.GetScoreDocumentWithHistoriesAsync(id);
+            var scoreDocumentModel = await _scoreDocumentRepository.GetScoreDocumentWithHistoriesAsync(user?.Id, id);
             if (scoreDocumentModel is null)
             {
                 return NotFound();
-            }
-
-            if (!scoreDocumentModel.IsPublic)
-            {
-                if (user?.Id != scoreDocumentModel.UserId)
-                {
-                    return Unauthorized();
-                }
             }
 
             return scoreDocumentModel;
@@ -42,12 +34,8 @@ namespace MusicXmlDb.Server.ScoreDocuments.View
         public async Task<IActionResult> GetScoreDocument(Guid scoreDocumentId, Guid historyId)
         {
             var user = ApplicationUser.CreateLoggedInUser(User);
-            if (user == null)
-            {
-                return Unauthorized();
-            }
 
-            var xmlDocument = await _scoreDocumentRepository.GetMusicXmlDocumentAsync(scoreDocumentId, historyId);
+            var xmlDocument = await _scoreDocumentRepository.GetMusicXmlDocumentAsync(user?.Id, scoreDocumentId, historyId);
             if (xmlDocument == null)
             {
                 return NotFound();

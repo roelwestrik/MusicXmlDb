@@ -19,6 +19,50 @@ namespace MusicXmlDb.Server.ScoreDocuments.Manage
             this.scoreDocumentRepository = scoreDocumentRepository;
         }
 
+
+        [HttpPost]
+        public async Task<ActionResult<PostScoreDocumentResponse>> PostScoreDocument([FromForm] string name, [FromForm] bool isPublic, IFormFile formFile)
+        {
+            var user = ApplicationUser.CreateLoggedInUser(User);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            string xmlContent;
+            try
+            {
+                xmlContent = musicXmlValidator.Validate(formFile);
+            }
+            catch (MusicXmlValidationException ex)
+            {
+                return Problem(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+
+            var body = new PostScoreDocumentBody()
+            {
+                DocumentName = name,
+                XmlString = xmlContent,
+                IsPublic = isPublic,
+            };
+
+            try
+            {
+                var response = await scoreDocumentRepository.InsertScoreDocumentAsync(user.Id, body);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ScoreDocument>>> GetScoreDocuments()
         {
@@ -86,46 +130,7 @@ namespace MusicXmlDb.Server.ScoreDocuments.Manage
             return Content(xmlDocument.Content, "application/xml");
         }
 
-        [HttpPost]
-        public async Task<ActionResult<PostScoreDocumentResponse>> PostScoreDocument([FromForm] string name, [FromForm] bool isPublic, IFormFile formFile)
-        {
-            var user = ApplicationUser.CreateLoggedInUser(User);
-            if (user == null)
-            {
-                return Unauthorized();
-            }
 
-            string xmlContent;
-            try
-            {
-                xmlContent = musicXmlValidator.Validate(formFile);
-            }
-            catch (MusicXmlValidationException ex)
-            {
-                return Problem(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return Problem(ex.Message);
-            }
-
-            var body = new PostScoreDocumentBody()
-            {
-                DocumentName = name,
-                XmlString = xmlContent,
-                IsPublic = isPublic,
-            };
-
-            try
-            {
-                var response = await scoreDocumentRepository.InsertScoreDocumentAsync(user.Id, body);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                return Problem(ex.Message);
-            }
-        }
 
         [HttpPost("{scoreDocumentId}")]
         public async Task<ActionResult<PostScoreDocumentHistoryReponse>> PostScoreDocument(Guid scoreDocumentId, IFormFile formFile)
@@ -192,6 +197,8 @@ namespace MusicXmlDb.Server.ScoreDocuments.Manage
 
             return NoContent();
         }
+
+
 
         [HttpDelete("{scoreDocumentId}/{scoreDocumentHistoryId}")]
         public async Task<IActionResult> DeleteScoreDocumentHistory(Guid scoreDocumentId, Guid scoreDocumentHistoryId)

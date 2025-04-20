@@ -35,7 +35,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { createScore } from "@/services/scoreDocuments"
+import { createScore } from "@/services/manageScoreDocuments"
 import FileUpload from "@/components/manage/FileUpload.vue";
 
 const router = useRouter();
