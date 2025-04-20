@@ -1,11 +1,11 @@
-import { ref } from 'vue';
 import Keycloak, { type KeycloakConfig } from 'keycloak-js';
+import { KEYCLOAK_CLIENT_ID, KEYCLOAK_REALM, KEYCLOAK_URL } from '@/services/environment';
 
 
 const config: KeycloakConfig = {
-    url: "http://localhost:18080/",
-    realm: "musicxmldb-auth",
-    clientId: "public-client"
+    url: KEYCLOAK_URL,
+    realm: KEYCLOAK_REALM,
+    clientId: KEYCLOAK_CLIENT_ID
 }
 
 export const keycloak = new Keycloak(config);

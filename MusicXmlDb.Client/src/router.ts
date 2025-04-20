@@ -25,15 +25,15 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: "",
-        component: () => import("./components/scores/Scores.vue")
+        component: () => import("./components/manage/Scores.vue")
       },
       {
         path: "edit",
-        component: () => import('./components/scores/Edit.vue')
+        component: () => import('./components/manage/Edit.vue')
       },
       {
         path: "create",
-        component: () => import('./components/scores/Create.vue')
+        component: () => import('./components/manage/Create.vue')
       }
     ]
   },

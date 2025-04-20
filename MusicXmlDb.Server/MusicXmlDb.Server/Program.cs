@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MusicXmlDb.Server.MusicXmlDocuments;
-using MusicXmlDb.Server.ScoreDocuments;
+using MusicXmlDb.Server.ScoreDocuments.Manage;
 
 namespace MusicXmlDb.Server;
 
@@ -29,7 +29,7 @@ public class Program
 
         // Add services to the container.
         var connectionString = builder.Configuration.GetConnectionString("Database");
-        builder.Services.AddTransient<ScoreDocumentRepository>();
+        builder.Services.AddTransient<PrivateScoreDocumentRepository>();
         builder.Services.AddSingleton<IMusicXmlValidator, MusicXmlValidator>();
 
         builder.Services.AddControllers();

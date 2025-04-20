@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { getScoreDetails, getMusicXMLDocument } from "@/services/api";
+import { getScoreDetails, getMusicXMLDocument } from "@/services/scoreDocuments";
 import { OpenSheetMusicDisplay, type IOSMDOptions } from "opensheetmusicdisplay";
 import type { ScoreDocument } from "@/models/ScoreDocument";
 import { formatDate } from "@/services/timeAndDate";

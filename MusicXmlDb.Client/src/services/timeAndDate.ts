@@ -1,8 +1,5 @@
 // Helper: Format Date Elegantly
 export function formatDate(date: Date, showTime: boolean = false): string {
-    const baseFormat = {
-        
-    }
     if (showTime) {
         return date.toLocaleString("en-US", {
             year: "numeric",
@@ -14,6 +11,7 @@ export function formatDate(date: Date, showTime: boolean = false): string {
             hour12: false // Ensures 24-hour format
         });
     }
+
     return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
