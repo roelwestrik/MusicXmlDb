@@ -1,0 +1,6 @@
+name: MusicXmlDb.IMSLP.API.Loads
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10  # Python version
+  - pip

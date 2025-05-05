@@ -1,0 +1,9 @@
+name: MusicXmlDb.IMSLP.API.Dumps
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10  # Python version
+  - requests  # For API calls
+  - pip
+  - pip:
+      - python-dotenv  # Load environment variables

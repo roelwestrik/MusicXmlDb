@@ -1,4 +1,4 @@
-name: MusicXmlDb.IMSLP.API
+name: MusicXmlDb.IMSLP.API.Diffs
 channels:
   - conda-forge
 dependencies:
@@ -6,4 +6,4 @@ dependencies:
   - requests  # For API calls
   - pip
   - pip:
-      - python-dotenv  # Load environment variables
+      - jsondiff

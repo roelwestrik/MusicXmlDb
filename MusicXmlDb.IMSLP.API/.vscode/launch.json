@@ -5,12 +5,52 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File with Arguments",
+            "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python Debugger: Dumps",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/dumps/main.py",
+            "python": "${userHome}\\miniconda3\\envs\\MusicXmlDb.IMSLP.API.Dumps\\python.exe",
             "console": "integratedTerminal",
-            "args": ["--stop_after=3", "--api_type=works"]
+            "args": [
+                "--stop_after=3",
+                "--output_folder=data/dumps",
+                "--api_types", "composers", "works"
+            ]
+        }, 
+        {
+            "name": "Python Debugger: Diffs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/diffs/main.py",
+            "python": "${userHome}\\miniconda3\\envs\\MusicXmlDb.IMSLP.API.Diffs\\python.exe",
+            "console": "integratedTerminal",
+            "args": [
+                "--dump_folder=data/dumps",
+                "--folder2=2025-05-05",
+                "--diff_folder=data/diffs",
+                "--api_types", "composers", "works"
+            ]
+        },
+        {
+            "name": "Python Debugger: Loads",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/loads/main.py",
+            "python": "${userHome}\\miniconda3\\envs\\MusicXmlDb.IMSLP.API.Loads\\python.exe",
+            "console": "integratedTerminal",
+            "args": [
+                "--diff_folder=data/diffs/",
+                "--diff_file=diff_empty_vs_2025-05-05.json",
+                "--output_folder=data/loads",
+                "--api_types", "composers", "works"
+            ]
         }
     ]
 }
