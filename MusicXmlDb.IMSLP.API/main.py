@@ -57,6 +57,7 @@ def fetch_api_data(data_folder, api_url, stop_after=None):
 
     except requests.exceptions.RequestException as e:
         logging.error(f"❌ Error fetching data: {e}")
+        raise
 
 if __name__ == "__main__":
     try:
@@ -90,3 +91,4 @@ if __name__ == "__main__":
     except Exception as e:
         logging.error(f"❌ Unexpected error: {e}")
         print(f"❌ An unexpected error occurred: {e}")
+        raise
