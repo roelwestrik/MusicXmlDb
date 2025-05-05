@@ -1,15 +1,18 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
+            "name": "Python: Conda Debugging (MacOS)",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
+            "program": "${workspaceFolder}/src/musicxmldb_imslp_api/main.py",
+            "python": "/opt/homebrew/Caskroom/miniconda/base/envs/MusicXmlDb_IMSLP_API/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "--output_folder", "generated"
+            ]
         }
     ]
 }
