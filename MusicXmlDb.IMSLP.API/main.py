@@ -67,9 +67,10 @@ if __name__ == "__main__":
         load_dotenv()
 
         # Get API URLs from environment variables
-        API_COMPOSERS = os.getenv("API_COMPOSERS")
-        API_WORKS = os.getenv("API_WORKS")
-
+        API_URL = os.getenv("API_URL")
+        if not API_URL:
+            raise ValueError("❌ URL not specified: make sure API_URL is set in the .env file!")
+            
         parser = argparse.ArgumentParser(description="Fetch paginated API data and store each page separately")
         parser.add_argument("--api_type", type=str, choices=["composers", "works"], required=True, help="API type to fetch (composers or works)")
         parser.add_argument("--output_folder", type=str, help="Custom output folder for storing JSON pages")
@@ -77,14 +78,11 @@ if __name__ == "__main__":
         args = parser.parse_args()
 
         # Select the correct API URL based on the user's choice
-        api_type = args.api_type == "composers"
-        api_url = API_COMPOSERS if api_type else API_WORKS
-        if not api_url:
-            raise ValueError(f"❌ URL not specified: make sure {"API_COMPOSERS" if api_type == "composeres" else "API_WORKS"} is set in the .env file!")
+        api_url = API_URL.replace("TYPE", "1") if args.api_type == "composers" else API_URL.replace("TYPE", "2")
         
         today = datetime.today().strftime("%Y-%m-%d")
         base_folder = args.output_folder if args.output_folder else os.path.join("data", today)
-        data_folder = os.path.join(base_folder, api_type)  # Separate "composers" and "works"
+        data_folder = os.path.join(base_folder, args.api_type)  # Separate "composers" and "works"
         os.makedirs(data_folder, exist_ok=True)
 
         fetch_api_data(data_folder, api_url, args.stop_after)
